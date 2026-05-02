@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Finova Africa – The Future of Digital Finance</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg-deep:#080f1a;--bg-mid:#0d1b2e;--bg-card:#0f2038;
+      --green:#2ecc71;--green-dark:#27ae60;--green-glow:rgba(46,204,113,0.18);
+      --text:#e8f0fe;--muted:#7a9bbf;--border:rgba(46,204,113,0.15);
+    }
+    html{scroll-behavior:smooth;}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg-deep);color:var(--text);overflow-x:hidden;}
+    .bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 80% 60% at 20% 30%,rgba(20,80,60,0.35) 0%,transparent 70%),radial-gradient(ellipse 60% 50% at 80% 70%,rgba(10,40,80,0.4) 0%,transparent 70%),linear-gradient(160deg,#080f1a 0%,#0b1a2e 50%,#071420 100%);}
+    .bg-canvas::after{content:'';position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%232ecc71' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");opacity:0.4;}
+    nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:1.1rem 5%;background:rgba(8,15,26,0.75);backdrop-filter:blur(18px);border-bottom:1px solid var(--border);}
+    .logo{display:flex;align-items:center;gap:0.55rem;font-family:'Syne',sans-serif;font-weight:800;font-size:1.25rem;text-decoration:none;color:var(--text);}
+    .logo svg{width:28px;height:28px;}
+    .logo span{color:var(--green);}
+    .nav-actions{display:flex;align-items:center;gap:1rem;}
+    .btn-ghost{background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:0.95rem;color:var(--text);padding:0.45rem 1rem;border-radius:8px;transition:color 0.2s,background 0.2s;}
+    .btn-ghost:hover{color:var(--green);background:var(--green-glow);}
+    .btn-primary{background:var(--green);color:#06100d;border:none;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:0.95rem;padding:0.55rem 1.4rem;border-radius:10px;transition:background 0.2s,transform 0.15s,box-shadow 0.2s;box-shadow:0 0 18px rgba(46,204,113,0.35);}
+    .btn-primary:hover{background:#34d877;transform:translateY(-1px);box-shadow:0 0 28px rgba(46,204,113,0.55);}
+    .hero{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8rem 5% 5rem;}
+    .hero-badge{display:inline-flex;align-items:center;gap:0.5rem;background:rgba(46,204,113,0.1);border:1px solid var(--border);border-radius:100px;padding:0.4rem 1rem;font-size:0.8rem;color:var(--green);letter-spacing:0.08em;text-transform:uppercase;font-weight:500;margin-bottom:2rem;animation:fadeUp 0.7s ease both;}
+    .hero-badge::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite;}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+    .hero h1{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(2.4rem,6vw,4.2rem);line-height:1.1;letter-spacing:-0.02em;max-width:800px;animation:fadeUp 0.7s 0.15s ease both;}
+    .hero h1 em{font-style:normal;color:var(--green);}
+    .hero p{max-width:560px;color:var(--muted);font-size:clamp(0.95rem,2vw,1.1rem);line-height:1.7;margin:1.6rem auto 2.5rem;animation:fadeUp 0.7s 0.3s ease both;}
+    .hero-cta{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;animation:fadeUp 0.7s 0.45s ease both;}
+    .btn-large{font-family:'Syne',sans-serif;font-weight:700;font-size:1.05rem;padding:0.85rem 2.2rem;border-radius:12px;border:none;cursor:pointer;transition:all 0.2s;}
+    .btn-large.green{background:var(--green);color:#06100d;box-shadow:0 0 30px rgba(46,204,113,0.4);}
+    .btn-large.green:hover{background:#34d877;transform:translateY(-2px);box-shadow:0 0 45px rgba(46,204,113,0.6);}
+    .btn-large.outline{background:transparent;color:var(--text);border:1px solid rgba(255,255,255,0.2);}
+    .btn-large.outline:hover{border-color:var(--green);color:var(--green);background:var(--green-glow);}
+    .wave-divider{position:relative;z-index:1;width:100%;overflow:hidden;line-height:0;margin-top:-2px;}
+    .wave-divider svg{display:block;width:100%;}
+    .features{position:relative;z-index:1;padding:5rem 5% 6rem;background:var(--bg-mid);}
+    .section-label{text-align:center;font-size:0.78rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--green);font-weight:600;margin-bottom:0.6rem;}
+    .section-title{text-align:center;font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(1.6rem,3.5vw,2.4rem);letter-spacing:-0.02em;margin-bottom:3.5rem;}
+    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem;max-width:1100px;margin:0 auto;}
+    .card{background:var(--bg-card);border:1px solid var(--border);border-radius:20px;padding:2.2rem;transition:transform 0.25s,box-shadow 0.25s,border-color 0.25s;position:relative;overflow:hidden;}
+    .card::before{content:'';position:absolute;top:-40%;left:-40%;width:80%;height:80%;background:radial-gradient(circle,rgba(46,204,113,0.08),transparent 70%);transition:opacity 0.3s;opacity:0;}
+    .card:hover{transform:translateY(-6px);border-color:rgba(46,204,113,0.4);box-shadow:0 12px 40px rgba(0,0,0,0.4);}
+    .card:hover::before{opacity:1;}
+    .card-icon{width:56px;height:56px;border-radius:14px;background:rgba(46,204,113,0.12);border:1px solid rgba(46,204,113,0.25);display:flex;align-items:center;justify-content:center;margin-bottom:1.4rem;font-size:1.5rem;}
+    .card h3{font-family:'Syne',sans-serif;font-weight:700;font-size:1.15rem;margin-bottom:0.6rem;}
+    .card p{color:var(--muted);font-size:0.93rem;line-height:1.65;}
+    .cta-section{position:relative;z-index:1;padding:6rem 5%;text-align:center;background:var(--bg-deep);}
+    .cta-inner{max-width:700px;margin:0 auto;background:linear-gradient(135deg,rgba(46,204,113,0.08),rgba(10,40,80,0.3));border:1px solid rgba(46,204,113,0.2);border-radius:28px;padding:4rem 2rem;position:relative;overflow:hidden;}
+    .cta-inner::before{content:'';position:absolute;bottom:-60%;left:50%;transform:translateX(-50%);width:300px;height:300px;background:radial-gradient(circle,rgba(46,204,113,0.15),transparent 70%);}
+    .cta-inner h2{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(1.5rem,3vw,2.2rem);letter-spacing:-0.02em;margin-bottom:0.8rem;}
+    .cta-inner p{color:var(--muted);margin-bottom:2rem;font-size:1rem;}
+    footer{position:relative;z-index:1;text-align:center;padding:1.8rem 5%;border-top:1px solid var(--border);color:var(--muted);font-size:0.85rem;background:var(--bg-deep);}
+    footer span{color:var(--green);}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+    .reveal{opacity:0;transform:translateY(30px);transition:opacity 0.6s ease,transform 0.6s ease;}
+    .reveal.visible{opacity:1;transform:none;}
+  </style>
+</head>
+<body>
+<div class="bg-canvas"></div>
+<nav>
+  <a href="#" class="logo">
+    <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M6 26L14 10L20 20L24 14L28 26" stroke="#2ecc71" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="6" cy="26" r="2" fill="#2ecc71"/>
+    </svg>
+    Finova <span>Africa</span>
+  </a>
+  <div class="nav-actions">
+    <button class="btn-ghost" onclick="location.href='login.html'">Login</button>
+    <button class="btn-primary" onclick="location.href='login.html'">Get Started</button>
+  </div>
+</nav>
+<section class="hero">
+  <div class="hero-badge">🌍 Built for Africa's Financial Future</div>
+  <h1>The Future of <em>Digital Finance</em> in Africa</h1>
+  <p>Finova Africa is a modern fintech platform allowing users to deposit funds through trusted exchangers, trade using AI‑powered signals, and manage digital assets securely.</p>
+  <div class="hero-cta">
+    <button class="btn-large green" onclick="location.href='login.html'">Start Now</button>
+    <button class="btn-large outline">Learn More</button>
+  </div>
+</section>
+<div class="wave-divider">
+  <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,30 C360,60 1080,0 1440,30 L1440,60 L0,60 Z" fill="#0d1b2e"/>
+  </svg>
+</div>
+<section class="features">
+  <p class="section-label">What We Offer</p>
+  <h2 class="section-title">Everything you need to trade smarter</h2>
+  <div class="cards">
+    <div class="card reveal"><div class="card-icon">🛡️</div><h3>Secure Wallet</h3><p>Store and manage your digital assets safely with bank-grade encryption and multi-factor authentication.</p></div>
+    <div class="card reveal"><div class="card-icon">🤖</div><h3>AI Trading Signals</h3><p>AI-powered market analysis for smarter trading. Get real-time signals backed by advanced algorithms.</p></div>
+    <div class="card reveal"><div class="card-icon">🤝</div><h3>Trusted Exchangers</h3><p>Deposit through verified local exchangers across Africa — fast, reliable, and always compliant.</p></div>
+  </div>
+</section>
+<section class="cta-section">
+  <div class="cta-inner reveal">
+    <h2>Start your financial journey with Finova Africa</h2>
+    <p>Join thousands of traders already growing their wealth with AI-powered tools.</p>
+    <button class="btn-large green" onclick="location.href='login.html'">Create Account</button>
+  </div>
+</section>
+<footer>© 2026 <span>Finova Africa</span>. All rights reserved.</footer>
+<script>
+  const observer=new IntersectionObserver(entries=>{entries.forEach((e,i)=>{if(e.isIntersecting){setTimeout(()=>e.target.classList.add('visible'),i*120);}});},{threshold:0.15});
+  document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+</script>
+</body>
+</html>
