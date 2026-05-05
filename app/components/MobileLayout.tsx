@@ -72,7 +72,7 @@ export default function MobileLayout({ children, activePage }: { children: React
         body { background:var(--bg); color:var(--text); font-family:"DM Sans",sans-serif; -webkit-tap-highlight-color:transparent; }
         ::-webkit-scrollbar { width:4px; }
         ::-webkit-scrollbar-thumb { background:#1a3a5c; border-radius:10px; }
-        .ml-topbar { position:fixed; top:0; left:0; right:0; z-index:300; height:var(--topbar-h); display:flex; align-items:center; justify-content:space-between; padding:0 1rem; background:rgba(8,15,26,0.92); backdrop-filter:blur(20px); border-bottom:1px solid var(--border); }
+        .ml-topbar { position:fixed; top:0; left:0; right:0; z-index:300; height:var(--topbar-h); display:flex; align-items:center; justify-content:space-between; padding:0 clamp(0.75rem, 3vw, 1rem); background:rgba(8,15,26,0.92); backdrop-filter:blur(20px); border-bottom:1px solid var(--border); }
         .ml-logo { display:flex; align-items:center; gap:0.5rem; font-family:"Syne",sans-serif; font-weight:800; font-size:1.05rem; text-decoration:none; color:var(--text); cursor:pointer; }
         .ml-logo span { color:var(--green); }
         .ml-topbar-right { display:flex; align-items:center; gap:0.6rem; }
@@ -149,12 +149,12 @@ export default function MobileLayout({ children, activePage }: { children: React
         .ml-drawer-bottom { padding:1rem 0.85rem 1.5rem; border-top:1px solid var(--border); }
         .ml-drawer-close { position:absolute; top:1rem; right:1rem; width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.08); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:1rem; color:var(--muted); }
         .ml-main { margin-left:190px; padding-top:var(--topbar-h); min-height:100vh; }
-        .ml-page-inner { padding:1.6rem 1.4rem; }
-        .ml-bottom-nav { display:none; position:fixed; bottom:0; left:0; right:0; z-index:300; height:var(--bottomnav-h); background:rgba(8,15,26,0.97); backdrop-filter:blur(20px); border-top:1px solid var(--border); padding:0 0.5rem; padding-bottom:env(safe-area-inset-bottom,0px); }
+        .ml-page-inner { padding:clamp(0.85rem,3vw,1.6rem) clamp(0.85rem,3vw,1.4rem); }
+        .ml-bottom-nav { display:none; position:fixed; bottom:0; left:0; right:0; z-index:300; height:calc(var(--bottomnav-h) + env(safe-area-inset-bottom, 0px)); background:rgba(8,15,26,0.97); backdrop-filter:blur(20px); border-top:1px solid var(--border); padding:0 0.5rem; padding-bottom:env(safe-area-inset-bottom,0px); }
         .ml-bottom-nav-inner { display:flex; align-items:center; justify-content:space-around; height:100%; }
         .ml-bnav-item { display:flex; flex-direction:column; align-items:center; gap:0.22rem; flex:1; cursor:pointer; padding:0.4rem 0.2rem; border:none; background:none; transition:all 0.18s; }
         .ml-bnav-icon { font-size:1.2rem; line-height:1; transition:transform 0.18s; }
-        .ml-bnav-label { font-size:0.62rem; font-weight:600; color:var(--muted); font-family:"Syne",sans-serif; white-space:nowrap; }
+        .ml-bnav-label { font-size:clamp(0.58rem,1.8vw,0.65rem); font-weight:600; color:var(--muted); font-family:"Syne",sans-serif; white-space:nowrap; }
         .ml-bnav-item.active .ml-bnav-label { color:var(--green); }
         .ml-bnav-item.active .ml-bnav-icon { transform:scale(1.2); }
         .ml-bnav-dot { display:none; width:4px; height:4px; border-radius:50%; background:var(--green); }
@@ -166,7 +166,7 @@ export default function MobileLayout({ children, activePage }: { children: React
           .ml-hamburger { display:flex; }
           .ml-chip-name { display:none; }
           .ml-chevron { display:none; }
-          .ml-main { margin-left:0; padding-bottom:var(--bottomnav-h); }
+          .ml-main { margin-left:0; padding-bottom:calc(var(--bottomnav-h) + env(safe-area-inset-bottom, 0px)); }
           .ml-page-inner { padding:1rem; }
           .ml-bottom-nav { display:block; }
           .ml-profile-drop { right:-0.5rem; width:calc(100vw - 1rem); }

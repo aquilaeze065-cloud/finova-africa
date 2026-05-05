@@ -3,6 +3,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ContractModal from "../components/ContractModal";
 
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
 export default function LoginPage() {
   const router = useRouter();
   const [tab,          setTab]         = useState("signup");
@@ -17,11 +19,6 @@ export default function LoginPage() {
   const [showContract, setShowContract]= useState(false);
   const [pendingUser,  setPendingUser] = useState(null);
 
-  const hex  = (n) => Array.from({length:n},()=>"0123456789abcdef"[Math.floor(Math.random()*16)]).join("");
-  const b58c = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-  const b58  = (n) => Array.from({length:n},()=>b58c[Math.floor(Math.random()*58)]).join("");
-  function genAddresses() { return { btc:"1FNV"+b58(30), eth:"0x"+hex(40), usdt:"T"+b58(33), bnb:"bnb1"+hex(38) }; }
-
   function handleSignup() {
     if (!name||!email||!password) { setError("Please fill all fields"); return; }
     if (password.length<8)        { setError("Password must be at least 8 characters"); return; }
@@ -30,31 +27,43 @@ export default function LoginPage() {
     setShowContract(true);
   }
 
-  function handleContractAccept(signature) {
+  async function handleContractAccept(signature) {
     setShowContract(false);
     setLoading(true);
-    setTimeout(() => {
-      const addresses = genAddresses();
-      const user = {
-        userId:            "FNV"+Date.now().toString(36).toUpperCase(),
-        name:              pendingUser.name,
-        email:             pendingUser.email,
-        password:          pendingUser.password,
-        addresses,
-        balances:          { btc:0, eth:0, usdt:0, bnb:0, ngn:0 },
-        transactions:      [],
-        contractSigned:    true,
-        contractSignedAt:  new Date().toISOString(),
-        contractSignature: signature,
-        createdAt:         new Date().toISOString(),
-      };
-      localStorage.setItem("finova_user",     JSON.stringify(user));
-      localStorage.setItem("finova_visited",  "true");
+    try {
+      // 1. Create account on backend
+      const signupRes = await fetch(`${API}/api/auth/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: pendingUser.name, email: pendingUser.email, password: pendingUser.password }),
+      });
+      const signupData = await signupRes.json();
+      if (!signupRes.ok) {
+        setError(signupData.error || "Signup failed");
+        setLoading(false);
+        return;
+      }
+
+      // 2. Sign the contract
+      await fetch(`${API}/api/auth/contract`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${signupData.token}` },
+        body: JSON.stringify({ signature }),
+      });
+
+      // 3. Save to localStorage
+      localStorage.setItem("finova_token",    signupData.token);
+      localStorage.setItem("finova_user",     JSON.stringify(signupData.user));
       localStorage.setItem("finova_loggedin", "true");
-      setAddrs(addresses);
+      localStorage.setItem("finova_visited",  "true");
+
+      setAddrs(signupData.user.addresses || {});
       setLoading(false);
       setStep("wallet");
-    }, 1500);
+    } catch(err) {
+      setError("Connection error. Please try again.");
+      setLoading(false);
+    }
   }
 
   function handleContractDecline() {
@@ -63,32 +72,38 @@ export default function LoginPage() {
     setError("You must accept the contract to create an account.");
   }
 
-  function handleSignin() {
+  async function handleSignin() {
     if (!email||!password) { setError("Please fill all fields"); return; }
     setError(""); setLoading(true);
-    setTimeout(() => {
-      try {
-        const saved = localStorage.getItem("finova_user");
-        if (saved) {
-          const user = JSON.parse(saved);
-          if (user.email === email) {
-            localStorage.setItem("finova_loggedin", "true");
-            localStorage.setItem("finova_visited",  "true");
-            setLoading(false);
-            router.replace("/dashboard");
-          } else {
-            setLoading(false);
-            setError("No account found with this email.");
-          }
-        } else {
-          setLoading(false);
-          setError("No account found. Please sign up first.");
-        }
-      } catch {
+    try {
+      const res = await fetch(`${API}/api/auth/signin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Login failed");
         setLoading(false);
-        setError("Something went wrong. Please try again.");
+        return;
       }
-    }, 1200);
+      // Save everything to localStorage
+      localStorage.setItem("finova_token",    data.token);
+      localStorage.setItem("finova_user",     JSON.stringify(data.user));
+      localStorage.setItem("finova_loggedin", "true");
+      localStorage.setItem("finova_visited",  "true");
+      setLoading(false);
+
+      // Check where to redirect
+      if (!data.user.reg_fee_paid) {
+        router.replace("/regfee");
+      } else {
+        router.replace("/dashboard");
+      }
+    } catch(err) {
+      setError("Connection error. Please check your internet and try again.");
+      setLoading(false);
+    }
   }
 
   function copy(text, key) {
@@ -97,10 +112,10 @@ export default function LoginPage() {
   }
 
   const coins = [
-    { key:"btc",  label:"Bitcoin (BTC)",  icon:"₿",  color:"#f7931a", bg:"rgba(247,147,26,0.1)"  },
-    { key:"eth",  label:"Ethereum (ETH)", icon:"⟠",  color:"#627eea", bg:"rgba(98,126,234,0.1)"  },
-    { key:"usdt", label:"USDT (TRC-20)",  icon:"₮",  color:"#26a17b", bg:"rgba(38,161,123,0.1)"  },
-    { key:"bnb",  label:"BNB Chain",      icon:"🔶", color:"#f3ba2f", bg:"rgba(243,186,47,0.1)"  },
+    { key:"btc",  label:"Bitcoin (BTC)",  icon:"₿",  color:"#f7931a", bg:"rgba(247,147,26,0.12)"  },
+    { key:"eth",  label:"Ethereum (ETH)", icon:"⟠",  color:"#627eea", bg:"rgba(98,126,234,0.12)"  },
+    { key:"usdt", label:"USDT (TRC-20)",  icon:"₮",  color:"#26a17b", bg:"rgba(38,161,123,0.12)"  },
+    { key:"bnb",  label:"BNB Chain",      icon:"🔶", color:"#f3ba2f", bg:"rgba(243,186,47,0.12)"  },
   ];
 
   return (
@@ -112,7 +127,7 @@ export default function LoginPage() {
         .lg-bg{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;
           background:radial-gradient(ellipse 70% 60% at 20% 20%,rgba(212,175,55,0.07),transparent 60%),
           radial-gradient(ellipse 50% 40% at 80% 80%,rgba(180,140,20,0.05),transparent 50%),#0a0800;}
-        .lg-card{width:100%;max-width:440px;background:rgba(20,15,0,0.98);border:1px solid rgba(212,175,55,0.25);border-radius:24px;padding:2.3rem 2rem;box-shadow:0 32px 80px rgba(0,0,0,0.8),0 0 0 1px rgba(212,175,55,0.05);}
+        .lg-card{width:100%;max-width:440px;background:rgba(20,15,0,0.98);border:1px solid rgba(212,175,55,0.25);border-radius:24px;padding:2.3rem 2rem;box-shadow:0 32px 80px rgba(0,0,0,0.8);}
         .lg-logo{display:flex;flex-direction:column;align-items:center;gap:0.4rem;margin-bottom:1.8rem;}
         .lg-logo-icon{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#b8960c,#d4af37,#f5d76e);display:flex;align-items:center;justify-content:center;font-size:1.3rem;box-shadow:0 0 24px rgba(212,175,55,0.4);}
         .lg-logo-name{font-family:"Playfair Display",serif;font-weight:900;font-size:1.2rem;background:linear-gradient(135deg,#d4af37,#f5d76e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
@@ -125,15 +140,12 @@ export default function LoginPage() {
         .lg-input{background:rgba(212,175,55,0.05);border:1px solid rgba(212,175,55,0.15);border-radius:12px;padding:0.85rem 1rem;font-size:0.93rem;color:#f5e6c8;font-family:"DM Sans",sans-serif;outline:none;transition:border-color 0.2s;width:100%;}
         .lg-input:focus{border-color:rgba(212,175,55,0.5);box-shadow:0 0 0 3px rgba(212,175,55,0.08);}
         .lg-error{background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.25);border-radius:9px;padding:0.6rem 0.8rem;font-size:0.8rem;color:#e74c3c;margin-bottom:0.8rem;}
-        .lg-btn{width:100%;padding:0.95rem;border:none;border-radius:13px;background:linear-gradient(135deg,#b8960c,#d4af37,#f5d76e);font-family:"Playfair Display",serif;font-weight:700;font-size:1rem;color:#0a0800;cursor:pointer;margin-top:0.5rem;box-shadow:0 0 24px rgba(212,175,55,0.3);transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:0.5rem;letter-spacing:0.02em;}
-        .lg-btn:hover{transform:translateY(-2px);box-shadow:0 0 40px rgba(212,175,55,0.5);}
+        .lg-btn{width:100%;padding:0.95rem;border:none;border-radius:13px;background:linear-gradient(135deg,#b8960c,#d4af37,#f5d76e);font-family:"Playfair Display",serif;font-weight:700;font-size:1rem;color:#0a0800;cursor:pointer;margin-top:0.5rem;box-shadow:0 0 24px rgba(212,175,55,0.3);transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:0.5rem;}
+        .lg-btn:hover{transform:translateY(-2px);}
         .lg-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
         .lg-notice{background:rgba(212,175,55,0.06);border:1px solid rgba(212,175,55,0.15);border-radius:10px;padding:0.65rem 0.85rem;font-size:0.76rem;color:#8a7040;margin-bottom:1rem;line-height:1.5;}
         .lg-notice b{color:#d4af37;}
-        .lg-divider{display:flex;align-items:center;gap:0.75rem;margin:1rem 0;color:#4a3a1a;font-size:0.75rem;}
-        .lg-divider::before,.lg-divider::after{content:"";flex:1;height:1px;background:rgba(212,175,55,0.1);}
         .lg-back{font-size:0.8rem;color:#6a5a2a;text-align:center;margin-top:1rem;cursor:pointer;background:none;border:none;width:100%;}
-        .lg-back:hover{color:#d4af37;}
         .wl-screen{animation:fadeIn 0.4s ease;}
         @keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
         .wl-addr-card{background:rgba(212,175,55,0.04);border:1px solid rgba(212,175,55,0.12);border-radius:14px;padding:0.9rem;margin-bottom:0.65rem;}
@@ -166,8 +178,9 @@ export default function LoginPage() {
           {loading ? (
             <div style={{textAlign:"center",padding:"3rem 1rem"}}>
               <div style={{width:"50px",height:"50px",border:"3px solid rgba(212,175,55,0.2)",borderTop:"3px solid #d4af37",borderRadius:"50%",animation:"spin 0.8s linear infinite",margin:"0 auto 1rem"}}/>
-              <div style={{fontFamily:"Playfair Display,serif",fontWeight:700,color:"#d4af37"}}>Setting up your account...</div>
-              <div style={{fontSize:"0.8rem",color:"#6a5a2a",marginTop:"0.4rem"}}>Generating wallet addresses</div>
+              <div style={{fontFamily:"Playfair Display,serif",fontWeight:700,color:"#d4af37"}}>
+                {tab==="signup"?"Setting up your account...":"Signing you in..."}
+              </div>
             </div>
           ) : step==="wallet" ? (
             <div className="wl-screen">
@@ -191,8 +204,8 @@ export default function LoginPage() {
                   <div className="wl-addr-text">{addrs[c.key]||"..."}</div>
                 </div>
               ))}
-              <button className="wl-continue" onClick={()=>router.replace("/dashboard")}>
-                Enter Dashboard →
+              <button className="wl-continue" onClick={()=>router.replace("/regfee")}>
+                Continue to Activation →
               </button>
             </div>
           ) : (
@@ -224,7 +237,6 @@ export default function LoginPage() {
                   <button className="lg-btn" onClick={handleSignup} disabled={!name||!email||!password}>
                     Continue to Contract →
                   </button>
-                  <div className="lg-divider">or</div>
                   <button className="lg-back" onClick={()=>{setTab("signin");setError("");}}>
                     Already have an account? Sign In
                   </button>
@@ -244,9 +256,8 @@ export default function LoginPage() {
                     <input className="lg-input" type="password" placeholder="Your password" value={password} onChange={e=>setPass(e.target.value)}/>
                   </div>
                   <button className="lg-btn" onClick={handleSignin} disabled={loading}>
-                    {loading?<><div className="spinner"/> Signing In...</>:"Sign In"}
+                    Sign In
                   </button>
-                  <div className="lg-divider">or</div>
                   <button className="lg-back" onClick={()=>{setTab("signup");setError("");}}>
                     New to Finova Africa? Create Account
                   </button>
