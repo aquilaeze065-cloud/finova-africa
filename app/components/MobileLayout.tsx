@@ -17,7 +17,7 @@ const navItems = [
   { icon:"⬆️", label:"Deposit",     path:"/deposit" },
   { icon:"⬇️", label:"Withdraw",    path:"/withdraw" },
   { icon:"🕐", label:"Transactions", path:"/transactions" },
-  { icon:"📈", label:"AI Trading",   path:"/ai-trading" },
+  
   { icon:"💰", label:"Savings",      path:"/savings" },
   { icon:"⚙️", label:"Settings",    path:"/settings" },
   { icon:"📊", label:"My Progress",  path:"/my-progress" },
@@ -28,7 +28,7 @@ const bottomNav = [
   { icon:"👛", label:"Wallet",  path:"/wallet" },
   { icon:"⬆️", label:"Deposit",path:"/deposit" },
   { icon:"🕐", label:"History", path:"/transactions" },
-  { icon:"👤", label:"Profile", path:"/profile" },
+  { icon:"👤", label:"Profile", path:"/verify" },
 ];
 
 export default function MobileLayout({ children, activePage }: { children: ReactNode; activePage: string }) {
@@ -73,11 +73,11 @@ export default function MobileLayout({ children, activePage }: { children: React
         ::-webkit-scrollbar { width:4px; }
         ::-webkit-scrollbar-thumb { background:#1a3a5c; border-radius:10px; }
         .ml-topbar { position:fixed; top:0; left:0; right:0; z-index:300; height:var(--topbar-h); display:flex; align-items:center; justify-content:space-between; padding:0 clamp(0.75rem, 3vw, 1rem); background:rgba(8,15,26,0.92); backdrop-filter:blur(20px); border-bottom:1px solid var(--border); }
-        .ml-logo { display:flex; align-items:center; gap:0.5rem; font-family:"Syne",sans-serif; font-weight:800; font-size:1.05rem; text-decoration:none; color:var(--text); cursor:pointer; }
+        .ml-logo { display:flex; align-items:center; gap:0.5rem; font-family:"Syne",sans-serif; font-weight:600; font-size:0.88rem; text-decoration:none; color:var(--text); cursor:pointer; }
         .ml-logo span { color:var(--green); }
         .ml-topbar-right { display:flex; align-items:center; gap:0.6rem; }
         .ml-notif { position:relative; width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,0.06); border:1px solid var(--border2); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:0.95rem; }
-        .ml-notif-dot { position:absolute; top:-2px; right:-2px; width:14px; height:14px; border-radius:50%; background:var(--green); color:#06100d; font-size:0.55rem; font-weight:800; display:flex; align-items:center; justify-content:center; border:2px solid var(--bg); }
+        .ml-notif-dot { position:absolute; top:-2px; right:-2px; width:14px; height:14px; border-radius:50%; background:var(--green); color:#06100d; font-size:0.55rem; font-weight:600; display:flex; align-items:center; justify-content:center; border:2px solid var(--bg); }
         .ml-hamburger { display:none; flex-direction:column; gap:4px; width:36px; height:36px; padding:8px; border-radius:10px; cursor:pointer; background:rgba(255,255,255,0.06); border:1px solid var(--border2); justify-content:center; }
         .ml-hamburger span { display:block; height:2px; border-radius:2px; background:var(--text); transition:all 0.25s; }
         .ml-hamburger.active span:nth-child(1) { transform:translateY(6px) rotate(45deg); }
@@ -93,9 +93,9 @@ export default function MobileLayout({ children, activePage }: { children: React
         @keyframes dropIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
         .pd-head { background:linear-gradient(135deg,rgba(46,204,113,0.1),rgba(10,22,40,0.95)); padding:1.1rem; border-bottom:1px solid rgba(46,204,113,0.1); }
         .pd-user-row { display:flex; align-items:center; gap:0.85rem; margin-bottom:0.85rem; }
-        .pd-big-av { width:48px; height:48px; border-radius:50%; background:linear-gradient(135deg,#27ae60,#1a6b40); display:flex; align-items:center; justify-content:center; font-size:1rem; font-weight:800; color:#fff; border:2px solid rgba(46,204,113,0.4); flex-shrink:0; position:relative; }
+        .pd-big-av { width:48px; height:48px; border-radius:50%; background:linear-gradient(135deg,#27ae60,#1a6b40); display:flex; align-items:center; justify-content:center; font-size:1rem; font-weight:600; color:#fff; border:2px solid rgba(46,204,113,0.4); flex-shrink:0; position:relative; }
         .pd-av-dot { position:absolute; bottom:1px; right:1px; width:12px; height:12px; border-radius:50%; background:var(--green); border:2px solid #0d1b2e; }
-        .pd-uname { font-family:"Syne",sans-serif; font-weight:800; font-size:0.95rem; }
+        .pd-uname { font-family:"Syne",sans-serif; font-weight:600; font-size:0.95rem; }
         .pd-uemail { font-size:0.72rem; color:var(--muted); }
         .pd-lvl-tag { display:inline-flex; align-items:center; gap:0.3rem; padding:0.22rem 0.6rem; border-radius:20px; font-family:"Syne",sans-serif; font-weight:700; font-size:0.68rem; border:1px solid; margin-top:0.4rem; }
         .pd-prog-row { display:flex; justify-content:space-between; font-size:0.7rem; color:var(--muted); margin-bottom:0.3rem; }
@@ -133,9 +133,9 @@ export default function MobileLayout({ children, activePage }: { children: React
         .ml-drawer { position:fixed; top:0; left:0; bottom:0; width:280px; background:#0a1628; z-index:360; display:flex; flex-direction:column; overflow-y:auto; transform:translateX(-100%); transition:transform 0.28s cubic-bezier(0.4,0,0.2,1); box-shadow:8px 0 40px rgba(0,0,0,0.6); }
         .ml-drawer.open { transform:translateX(0); }
         .ml-drawer-head { padding:1.4rem 1.2rem 1.1rem; background:linear-gradient(135deg,rgba(46,204,113,0.1),rgba(10,22,40,0.9)); border-bottom:1px solid var(--border); }
-        .ml-drawer-av { width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,#27ae60,#1a6b40); display:flex; align-items:center; justify-content:center; font-size:1.2rem; font-weight:800; color:#fff; border:2px solid rgba(46,204,113,0.4); margin-bottom:0.7rem; position:relative; }
+        .ml-drawer-av { width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,#27ae60,#1a6b40); display:flex; align-items:center; justify-content:center; font-size:1.2rem; font-weight:600; color:#fff; border:2px solid rgba(46,204,113,0.4); margin-bottom:0.7rem; position:relative; }
         .ml-drawer-av-dot { position:absolute; bottom:2px; right:2px; width:14px; height:14px; border-radius:50%; background:var(--green); border:2px solid #0a1628; }
-        .ml-drawer-name { font-family:"Syne",sans-serif; font-weight:800; font-size:1.05rem; }
+        .ml-drawer-name { font-family:"Syne",sans-serif; font-weight:600; font-size:0.88rem; }
         .ml-drawer-email { font-size:0.76rem; color:var(--muted); margin-top:0.1rem; }
         .ml-drawer-lvl { display:inline-flex; align-items:center; gap:0.3rem; padding:0.25rem 0.65rem; border-radius:20px; font-family:"Syne",sans-serif; font-weight:700; font-size:0.7rem; border:1px solid; margin-top:0.5rem; }
         .ml-drawer-prog-wrap { margin-top:0.85rem; }
@@ -159,7 +159,7 @@ export default function MobileLayout({ children, activePage }: { children: React
         .ml-bnav-item.active .ml-bnav-icon { transform:scale(1.2); }
         .ml-bnav-dot { display:none; width:4px; height:4px; border-radius:50%; background:var(--green); }
         .ml-bnav-item.active .ml-bnav-dot { display:block; }
-        .ml-bnav-center { width:52px; height:52px; border-radius:50%; background:linear-gradient(135deg,#27ae60,#2ecc71); display:flex; align-items:center; justify-content:center; font-size:1.3rem; box-shadow:0 0 20px rgba(46,204,113,0.5); cursor:pointer; flex-shrink:0; border:none; transition:all 0.2s; margin-top:-16px; }
+        .ml-bnav-center { width:52px; height:52px; border-radius:50%; background:linear-gradient(135deg,#27ae60,#2ecc71); display:flex; align-items:center; justify-content:center; font-size:1rem; box-shadow:0 0 20px rgba(46,204,113,0.5); cursor:pointer; flex-shrink:0; border:none; transition:all 0.2s; margin-top:-16px; }
         .ml-bnav-center:hover { transform:scale(1.08); }
         @media (max-width: 768px) {
           .ml-sidebar { display:none; }
@@ -167,7 +167,7 @@ export default function MobileLayout({ children, activePage }: { children: React
           .ml-chip-name { display:none; }
           .ml-chevron { display:none; }
           .ml-main { margin-left:0; padding-bottom:calc(var(--bottomnav-h) + env(safe-area-inset-bottom, 0px)); }
-          .ml-page-inner { padding:1rem; }
+          .ml-page-inner { padding:0.75rem; }
           .ml-bottom-nav { display:block; }
           .ml-profile-drop { right:-0.5rem; width:calc(100vw - 1rem); }
         }
@@ -179,7 +179,7 @@ export default function MobileLayout({ children, activePage }: { children: React
         @media(max-width:480px) { .r-grid-2{grid-template-columns:1fr;} .r-grid-3{grid-template-columns:1fr;} .r-grid-4{grid-template-columns:1fr 1fr;} }
         .r-card { background:var(--bg-card); border:1px solid var(--border); border-radius:18px; padding:1.3rem; }
         @media(max-width:480px) { .r-card { border-radius:14px; padding:1rem; } }
-        .r-page-title { font-family:"Syne",sans-serif; font-weight:800; font-size:1.55rem; margin-bottom:0.2rem; }
+        .r-page-title { font-family:"Syne",sans-serif; font-weight:600; font-size:1.1rem; margin-bottom:0.2rem; }
         .r-page-sub { font-size:0.86rem; color:var(--muted); margin-bottom:1.2rem; }
         .r-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
         .r-table-wrap table { min-width:480px; }
