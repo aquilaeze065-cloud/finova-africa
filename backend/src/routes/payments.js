@@ -48,7 +48,7 @@ router.post("/admin/approve/:id", authAdmin, async (req, res) => {
     const userId = payRes.rows[0].user_id;
     await db.query("UPDATE users SET reg_fee_paid=true,account_status='active' WHERE id=$1",[userId]);
     await db.query(
-      "INSERT INTO notifications(user_id,type,title,body,icon,action) VALUES($1,'deposit','Account Activated!','Your registration fee is confirmed. Welcome to Finova Africa!','👑','/dashboard')",
+      "INSERT INTO notifications(user_id,type,title,body,icon,action) VALUES($1,'deposit','Account Activated!','Your registration fee is confirmed. Welcome to NEXORA!','👑','/dashboard')",
       [userId]
     );
     const endDate = new Date(); endDate.setFullYear(endDate.getFullYear()+1);

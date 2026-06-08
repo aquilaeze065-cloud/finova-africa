@@ -58,7 +58,7 @@ app.use("/api/profile",                     require("./routes/profile"));
 // Health check
 app.get("/health", (req, res) => res.json({
   status: "ok",
-  service: "Finova Africa API",
+  service: "NEXORA API",
   version: "1.0.0",
 }));
 
@@ -73,6 +73,6 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log("🚀 Finova Africa API → http://localhost:" + PORT);
+  console.log("🚀 NEXORA API → http://localhost:" + PORT);
   console.log("🔒 Security: Rate limiting + Input sanitization + CSP headers active");
 });

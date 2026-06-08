@@ -18,10 +18,10 @@ async function setup() {
     const hash = await bcrypt.hash("finova2024admin", 12);
     await pool.query(
       "INSERT INTO admins(email,password_hash,name) VALUES($1,$2,$3) ON CONFLICT(email) DO NOTHING",
-      ["admin@finovaafrica.com", hash, "Finova Admin"]
+      ["admin@nexora.com", hash, "NEXORA Admin"]
     );
     console.log("✅ Admin created");
-    console.log("📧 Email: admin@finovaafrica.com");
+    console.log("📧 Email: admin@nexora.com");
     console.log("🔑 Password: finova2024admin");
     console.log("🎉 Database setup complete!");
     process.exit(0);
