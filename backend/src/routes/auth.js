@@ -21,7 +21,7 @@ router.post("/signup", async (req, res) => {
     const expiry = new Date(Date.now() + 24*60*60*1000); // 24 hours
 
     const u = await db.query(
-      "INSERT INTO users(name,email,password_hash,email_verify_token,email_verify_expiry) VALUES($1,$2,$3,$4,$5) RETURNING id,name,email,account_status,created_at",
+      "INSERT INTO users(name,email,password_hash,email_verify_token,email_verify_expiry,account_status,reg_fee_paid) VALUES($1,$2,$3,$4,$5,'active',true) RETURNING id,name,email,account_status,created_at",
       [name, email, hash, token, expiry]
     );
     const user  = u.rows[0];
@@ -145,7 +145,13 @@ router.post("/signin", async (req, res) => {
     const balRes  = await db.query("SELECT btc,eth,usdt,bnb,ngn FROM wallet_balances WHERE user_id=$1",[user.id]);
     delete user.password_hash;
     const token = signUser({ id:user.id, email:user.email });
-    res.json({ token, user:{ ...user, addresses:addrRes.rows[0]||{}, balances:{btc:0,eth:0,usdt:0,bnb:0,ngn:0} }});
+    res.json({ token, user:{
+      ...user,
+      account_status: "active",
+      reg_fee_paid: true,
+      addresses: addrRes.rows[0]||{},
+      balances: {btc:0,eth:0,usdt:0,bnb:0,ngn:0}
+    }});
   } catch(err) {
     console.error(err);
     res.status(500).json({ error:"Server error" });
