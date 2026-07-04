@@ -84,3 +84,59 @@ router.post("/admin/reject/:id", authAdmin, async (req, res) => {
 });
 
 module.exports = router;
+
+// ADMIN - Credit user wallet (weekly savings)
+router.post("/admin/credit/:userId", require("../middleware/auth").authAdmin, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { amount, weekNumber, currency, note } = req.body;
+
+    if (!amount || !weekNumber) {
+      return res.status(400).json({ error: "Amount and week number required" });
+    }
+
+    // Update savings week as paid
+    const planRes = await require("../db").query(
+      "SELECT id FROM savings_plans WHERE user_id=$1 AND status='active' LIMIT 1",
+      [userId]
+    );
+
+    if (planRes.rows[0]) {
+      const planId = planRes.rows[0].id;
+      await require("../db").query(
+        `UPDATE savings_weeks 
+         SET status='paid', paid_amount=$1, paid_at=NOW(), is_penalty=false
+         WHERE plan_id=$2 AND week_number=$3 AND status!='paid'`,
+        [amount, planId, weekNumber]
+      );
+      await require("../db").query(
+        "UPDATE savings_plans SET total_paid=total_paid+$1 WHERE id=$2",
+        [amount, planId]
+      );
+    }
+
+    // Add notification to user
+    await require("../db").query(
+      `INSERT INTO notifications(user_id,type,title,body,icon,action)
+       VALUES($1,'deposit',$2,$3,'💰','/savings')`,
+      [
+        userId,
+        `Week ${weekNumber} Payment Confirmed`,
+        `Your payment of $${amount} USDT for week ${weekNumber} has been confirmed by admin. ${note||""}`,
+      ]
+    );
+
+    // Log transaction
+    await require("../db").query(
+      `INSERT INTO transactions(user_id,type,crypto,amount,usd_value,status)
+       VALUES($1,'savings_payment','USDT',$2,$2,'confirmed')`,
+      [userId, amount]
+    );
+
+    res.json({ success: true, message: `Week ${weekNumber} credited for user` });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});

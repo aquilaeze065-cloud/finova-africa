@@ -1,40 +1,58 @@
 const router = require("express").Router();
-const db     = require("../db");
+
+// In-memory OTP store (simpler than DB for this use case)
+const otpStore = new Map();
 
 function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+function cleanPhone(phone) {
+  // Remove all non-digits
+  return phone.replace(/\D/g, "");
 }
 
 // SEND OTP
 router.post("/send", async (req, res) => {
   try {
     const { phone, name } = req.body;
-    if (!phone) return res.status(400).json({ error:"WhatsApp number required" });
+    if (!phone) return res.status(400).json({ error: "WhatsApp number required" });
 
-    const clean   = phone.replace(/\D/g,"");
+    const clean = cleanPhone(phone);
+    if (clean.length < 7) {
+      return res.status(400).json({ error: "Please enter a valid phone number with country code" });
+    }
+
     const code    = generateOTP();
-    const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+    const expires = Date.now() + 15 * 60 * 1000; // 15 minutes
 
-    // Save OTP
-    await db.query("DELETE FROM otp_codes WHERE identifier=$1", [clean]);
-    await db.query(
-      "INSERT INTO otp_codes(identifier,code,type,expires_at) VALUES($1,$2,'verify',$3)",
-      [clean, code, expires]
-    );
+    // Store OTP (multiple keys for flexibility)
+    otpStore.set(clean, { code, expires, name });
+    // Also store with common variations
+    if (clean.startsWith("0")) {
+      otpStore.set("234" + clean.slice(1), { code, expires, name });
+    }
+    if (!clean.startsWith("234") && clean.length === 10) {
+      otpStore.set("234" + clean, { code, expires, name });
+    }
 
-    // Build WhatsApp message URL (sends OTP to user's WhatsApp)
-    const text = `👑 *NEXORA Verification*\n\nHi ${name||"there"}! Your verification code is:\n\n*${code}*\n\n⏱ Expires in 10 minutes.\n🔒 Do not share this code with anyone.`;
+    console.log(`✅ OTP generated for ${clean}: ${code}`);
+
+    // Build WhatsApp URL
+    const text = `👑 *NEXORA Verification Code*\n\nHi ${name || "there"}!\n\nYour code is:\n\n*${code}*\n\n⏱ Valid for 15 minutes.\n🔒 Never share this code.`;
     const waUrl = `https://wa.me/${clean}?text=${encodeURIComponent(text)}`;
 
     res.json({
       success: true,
-      code,        // Always return code so user sees it on screen too
-      waUrl,       // WhatsApp link
+      code,      // Always return so user sees it on screen
+      waUrl,
       phone: clean,
+      message: `Code generated for +${clean}`,
     });
+
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error:"Server error" });
+    res.status(500).json({ error: "Server error" });
   }
 });
 
@@ -42,22 +60,57 @@ router.post("/send", async (req, res) => {
 router.post("/verify", async (req, res) => {
   try {
     const { phone, code } = req.body;
-    if (!phone||!code) return res.status(400).json({ error:"Phone and code required" });
-
-    const clean  = phone.replace(/\D/g,"");
-    const result = await db.query(
-      "SELECT * FROM otp_codes WHERE identifier=$1 AND code=$2 AND used=false AND expires_at>NOW()",
-      [clean, code]
-    );
-
-    if (!result.rows[0]) {
-      return res.status(400).json({ error:"Invalid or expired code. Request a new one." });
+    if (!phone || !code) {
+      return res.status(400).json({ error: "Phone and code required" });
     }
 
-    await db.query("UPDATE otp_codes SET used=true WHERE id=$1",[result.rows[0].id]);
-    res.json({ success:true, verified:true });
+    const clean = cleanPhone(phone);
+    const trimCode = code.toString().trim();
+
+    // Try multiple phone variations
+    const variations = [
+      clean,
+      clean.startsWith("0") ? "234" + clean.slice(1) : null,
+      clean.startsWith("234") ? "0" + clean.slice(3) : null,
+      clean.length === 10 ? "234" + clean : null,
+    ].filter(Boolean);
+
+    let stored = null;
+    let matchedKey = null;
+
+    for (const v of variations) {
+      if (otpStore.has(v)) {
+        stored = otpStore.get(v);
+        matchedKey = v;
+        break;
+      }
+    }
+
+    if (!stored) {
+      console.log(`OTP not found for ${clean}. Store keys:`, [...otpStore.keys()]);
+      return res.status(400).json({
+        error: "Code not found. Please request a new code.",
+      });
+    }
+
+    if (Date.now() > stored.expires) {
+      otpStore.delete(matchedKey);
+      return res.status(400).json({ error: "Code expired. Please request a new one." });
+    }
+
+    if (stored.code !== trimCode) {
+      return res.status(400).json({ error: "Wrong code. Please check and try again." });
+    }
+
+    // Success - clear OTP
+    variations.forEach(v => otpStore.delete(v));
+    console.log(`✅ OTP verified for ${clean}`);
+
+    res.json({ success: true, verified: true });
+
   } catch (err) {
-    res.status(500).json({ error:"Server error" });
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
