@@ -1,23 +1,16 @@
 "use client";
-import type { Metadata } from "next";
-import "./globals.css";
-import { WalletProvider } from "./context/WalletContext";
+import Script from "next/script";
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"/>
-        <meta name="theme-color" content="#0a0800"/>
-        <meta name="apple-mobile-web-app-capable" content="yes"/>
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-        <meta name="apple-mobile-web-app-title" content="Finova Africa"/>
-        <link rel="manifest" href="/manifest.json"/>
-      </head>
       <body>
-        <WalletProvider>
-          {children}
-        </WalletProvider>
+        {children}
+        {/* Nexora Support Widget */}
+        <Script
+          src="https://cdn.nexora.com/support.js"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );

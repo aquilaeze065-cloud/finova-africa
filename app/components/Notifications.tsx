@@ -13,12 +13,12 @@ export function useNotifications() {
   useEffect(()=>{
     if(typeof window!=="undefined"&&"Notification" in window) setPermission(Notification.permission);
     try {
-      const saved=localStorage.getItem("finova_notifications");
+      const saved=localStorage.getItem("nexora_notifications");
       if(saved) setNotifications(JSON.parse(saved).map((n:AppNotification)=>({...n,time:new Date(n.time)})));
     } catch {}
   },[]);
 
-  const save=useCallback((notifs:AppNotification[])=>{ try{localStorage.setItem("finova_notifications",JSON.stringify(notifs));}catch{} },[]);
+  const save=useCallback((notifs:AppNotification[])=>{ try{localStorage.setItem("nexora_notifications",JSON.stringify(notifs));}catch{} },[]);
 
   async function requestPermission():Promise<boolean> {
     if(!("Notification" in window)) return false;
@@ -35,7 +35,7 @@ export function useNotifications() {
 
   function markRead(id:string){ setNotifications(prev=>{ const u=prev.map(n=>n.id===id?{...n,read:true}:n); save(u); return u; }); }
   function markAllRead(){ setNotifications(prev=>{ const u=prev.map(n=>({...n,read:true})); save(u); return u; }); }
-  function clear(){ setNotifications([]); localStorage.removeItem("finova_notifications"); }
+  function clear(){ setNotifications([]); localStorage.removeItem("nexora_notifications"); }
 
   return { notifications, unreadCount:notifications.filter(n=>!n.read).length, permission, requestPermission, push, markRead, markAllRead, clear };
 }
@@ -56,7 +56,7 @@ export function NotificationBell() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
-  const tc=(t:string)=>t==="kyc"?"#2ecc71":t==="deposit"?"#2ecc71":t==="withdrawal"?"#e74c3c":t==="price"?"#f39c12":t==="security"?"#e74c3c":"#7a9bbf";
+  const tc=(t:string)=>t==="kyc"?"#2ecc71":t==="deposit"?"#2ecc71":t==="withdrawal"?"#ff4757":t==="price"?"#00c896":t==="security"?"#ff4757":"#7a9bbf";
 
   return (
     <>
@@ -64,13 +64,13 @@ export function NotificationBell() {
         .nb-wrap{position:relative;}
         .nb-btn{position:relative;width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.95rem;transition:all 0.2s;}
         .nb-btn:hover,.nb-btn.open{background:rgba(46,204,113,0.08);border-color:rgba(46,204,113,0.3);}
-        .nb-badge{position:absolute;top:-3px;right:-3px;width:18px;height:18px;border-radius:50%;background:#e74c3c;color:#fff;font-size:0.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid #080f1a;animation:nbP 2s infinite;}
+        .nb-badge{position:absolute;top:-3px;right:-3px;width:18px;height:18px;border-radius:50%;background:#ff4757;color:#fff;font-size:0.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid #060f0c;animation:nbP 2s infinite;}
         @keyframes nbP{0%,100%{box-shadow:0 0 0 0 rgba(231,76,60,0.4)}70%{box-shadow:0 0 0 6px rgba(231,76,60,0)}}
         .nb-panel{position:absolute;top:calc(100%+10px);right:0;width:360px;max-width:calc(100vw - 1rem);background:#0d1b2e;border:1px solid rgba(46,204,113,0.15);border-radius:18px;box-shadow:0 24px 64px rgba(0,0,0,0.75);z-index:600;overflow:hidden;animation:nbDrop 0.2s ease;}
         @keyframes nbDrop{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
         .nb-head{padding:0.9rem 1rem;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;}
-        .nb-perm{padding:0.65rem 1rem;background:rgba(243,156,18,0.1);border-bottom:1px solid rgba(243,156,18,0.15);display:flex;align-items:center;justify-content:space-between;gap:0.5rem;font-size:0.78rem;}
-        .nb-perm-btn{padding:0.25rem 0.7rem;background:rgba(243,156,18,0.2);border:1px solid rgba(243,156,18,0.3);border-radius:8px;color:#f39c12;font-size:0.72rem;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;}
+        .nb-perm{padding:0.65rem 1rem;background:rgba(0,200,150,0.1);border-bottom:1px solid rgba(0,200,150,0.15);display:flex;align-items:center;justify-content:space-between;gap:0.5rem;font-size:0.78rem;}
+        .nb-perm-btn{padding:0.25rem 0.7rem;background:rgba(0,200,150,0.2);border:1px solid rgba(0,200,150,0.3);border-radius:8px;color:#00c896;font-size:0.72rem;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;}
         .nb-list{max-height:360px;overflow-y:auto;}
         .nb-item{display:flex;align-items:flex-start;gap:0.75rem;padding:0.85rem 1rem;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer;transition:background 0.15s;}
         .nb-item:hover{background:rgba(255,255,255,0.03);}
@@ -97,7 +97,7 @@ export function NotificationBell() {
             </div>
             {permission!=="granted"&&(
               <div className="nb-perm">
-                <span style={{color:"#f39c12"}}>🔔 Enable push notifications</span>
+                <span style={{color:"#00c896"}}>🔔 Enable push notifications</span>
                 <button className="nb-perm-btn" onClick={async()=>{
                   await requestPermission();
                   push({type:"system",icon:"🔔",title:"Notifications Enabled!",body:"You will now receive alerts for deposits, KYC updates and price changes.",action:"/dashboard"});
@@ -132,26 +132,26 @@ export function NotificationBell() {
 
 export function notifyKycApproved(stepTitle:string) {
   try {
-    const existing=JSON.parse(localStorage.getItem("finova_notifications")??"[]");
+    const existing=JSON.parse(localStorage.getItem("nexora_notifications")??"[]");
     existing.unshift({id:Date.now().toString(),type:"kyc",icon:"🛡️",title:"KYC Step Approved!",body:`Your ${stepTitle} has been verified. Your account level has been upgraded!`,read:false,time:new Date(),action:"/profile"});
-    localStorage.setItem("finova_notifications",JSON.stringify(existing.slice(0,50)));
+    localStorage.setItem("nexora_notifications",JSON.stringify(existing.slice(0,50)));
     if("Notification" in window&&Notification.permission==="granted") new Notification("KYC Approved! 🎉",{body:`Your ${stepTitle} has been verified.`});
   } catch {}
 }
 
 export function notifyKycRejected(stepTitle:string) {
   try {
-    const existing=JSON.parse(localStorage.getItem("finova_notifications")??"[]");
+    const existing=JSON.parse(localStorage.getItem("nexora_notifications")??"[]");
     existing.unshift({id:Date.now().toString(),type:"kyc",icon:"⚠️",title:"KYC Needs Attention",body:`Your ${stepTitle} was not approved. Please resubmit with clearer documents.`,read:false,time:new Date(),action:"/verify"});
-    localStorage.setItem("finova_notifications",JSON.stringify(existing.slice(0,50)));
+    localStorage.setItem("nexora_notifications",JSON.stringify(existing.slice(0,50)));
     if("Notification" in window&&Notification.permission==="granted") new Notification("KYC Update",{body:`Your ${stepTitle} needs attention.`});
   } catch {}
 }
 
 export function notifyDeposit(amount:string, crypto:string) {
   try {
-    const existing=JSON.parse(localStorage.getItem("finova_notifications")??"[]");
+    const existing=JSON.parse(localStorage.getItem("nexora_notifications")??"[]");
     existing.unshift({id:Date.now().toString(),type:"deposit",icon:"✅",title:"Deposit Confirmed!",body:`${amount} ${crypto} has been credited to your Finova wallet.`,read:false,time:new Date(),action:"/wallet"});
-    localStorage.setItem("finova_notifications",JSON.stringify(existing.slice(0,50)));
+    localStorage.setItem("nexora_notifications",JSON.stringify(existing.slice(0,50)));
   } catch {}
 }

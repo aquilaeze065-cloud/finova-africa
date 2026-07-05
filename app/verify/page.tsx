@@ -37,7 +37,7 @@ export default function VerifyPage() {
   const addressRef   = useRef(null);
 
   useEffect(()=>{
-    const u = JSON.parse(localStorage.getItem("finova_user")||"{}");
+    const u = JSON.parse(localStorage.getItem("nexora_user")||"{}");
     if (u.profile) setProfile(p=>({...p,...u.profile}));
     if (u.kycSubmitted) setKycSubmitted(true);
     // pre-fill from signup
@@ -59,10 +59,10 @@ export default function VerifyPage() {
   function saveProfile() {
     setLoading(true);
     setTimeout(()=>{
-      const u = JSON.parse(localStorage.getItem("finova_user")||"{}");
+      const u = JSON.parse(localStorage.getItem("nexora_user")||"{}");
       u.profile = profile;
       u.profileComplete = !!(profile.fullName&&profile.dob&&profile.phone&&profile.address&&profile.nin);
-      localStorage.setItem("finova_user", JSON.stringify(u));
+      localStorage.setItem("nexora_user", JSON.stringify(u));
       setLoading(false);
       showToast("✅ Profile saved successfully!");
     },1200);
@@ -72,8 +72,8 @@ export default function VerifyPage() {
     if (!idFront||!selfie) { showToast("⚠️ Please upload ID and selfie at minimum"); return; }
     setLoading(true);
     setTimeout(()=>{
-      const u = JSON.parse(localStorage.getItem("finova_user")||"{}");
-      const kyc = JSON.parse(localStorage.getItem("finova_kyc")||"{}");
+      const u = JSON.parse(localStorage.getItem("nexora_user")||"{}");
+      const kyc = JSON.parse(localStorage.getItem("nexora_kyc")||"{}");
       const entry = {
         stepId:"full_kyc", title:"Full KYC Verification",
         submittedAt: new Date().toISOString(),
@@ -89,9 +89,9 @@ export default function VerifyPage() {
         profile,
       };
       kyc["full_kyc"] = entry;
-      localStorage.setItem("finova_kyc", JSON.stringify(kyc));
+      localStorage.setItem("nexora_kyc", JSON.stringify(kyc));
       u.kycSubmitted = true;
-      localStorage.setItem("finova_user", JSON.stringify(u));
+      localStorage.setItem("nexora_user", JSON.stringify(u));
       setKycSubmitted(true);
       setLoading(false);
       showToast("✅ KYC submitted for review!");
@@ -110,38 +110,38 @@ export default function VerifyPage() {
   return (
     <MobileLayout activePage="Profile">
       <style>{`
-        .vf-tabs{display:flex;background:rgba(212,175,55,0.05);border:1px solid rgba(212,175,55,0.12);border-radius:14px;padding:0.25rem;gap:0.25rem;margin-bottom:1.3rem;}
-        .vf-tab{flex:1;padding:0.55rem 0.4rem;border-radius:10px;border:none;cursor:pointer;font-size:0.78rem;font-weight:600;transition:all 0.2s;background:none;color:#8a7040;display:flex;align-items:center;justify-content:center;gap:0.3rem;}
-        .vf-tab.active{background:linear-gradient(135deg,#b8960c,#d4af37);color:#0a0800;font-weight:700;}
+        .vf-tabs{display:flex;background:rgba(0,200,150,0.05);border:1px solid rgba(0,200,150,0.12);border-radius:14px;padding:0.25rem;gap:0.25rem;margin-bottom:1.3rem;}
+        .vf-tab{flex:1;padding:0.55rem 0.4rem;border-radius:10px;border:none;cursor:pointer;font-size:0.78rem;font-weight:600;transition:all 0.2s;background:none;color:#5a8a7a;display:flex;align-items:center;justify-content:center;gap:0.3rem;}
+        .vf-tab.active{background:linear-gradient(135deg,#00a87a,#00c896);color:#050f0c;font-weight:700;}
         .vf-section{margin-bottom:1.2rem;}
-        .vf-section-title{font-family:"Playfair Display",serif;font-weight:700;font-size:0.9rem;color:#d4af37;margin-bottom:0.75rem;display:flex;align-items:center;gap:0.4rem;}
+        .vf-section-title{font-family:"Inter",serif;font-weight:700;font-size:0.9rem;color:#00c896;margin-bottom:0.75rem;display:flex;align-items:center;gap:0.4rem;}
         .vf-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;}
         .vf-field{display:flex;flex-direction:column;gap:0.35rem;}
         .vf-field.full{grid-column:1/-1;}
-        .vf-label{font-size:0.7rem;color:#8a7040;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;}
-        .vf-input{background:rgba(212,175,55,0.05);border:1px solid rgba(212,175,55,0.15);border-radius:11px;padding:0.72rem 0.9rem;font-size:0.88rem;color:#f5e6c8;font-family:"DM Sans",sans-serif;outline:none;width:100%;transition:border-color 0.2s;}
-        .vf-input:focus{border-color:rgba(212,175,55,0.45);box-shadow:0 0 0 3px rgba(212,175,55,0.08);}
+        .vf-label{font-size:0.7rem;color:#5a8a7a;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;}
+        .vf-input{background:rgba(0,200,150,0.05);border:1px solid rgba(0,200,150,0.15);border-radius:11px;padding:0.72rem 0.9rem;font-size:0.88rem;color:#e8f8f4;font-family:"DM Sans",sans-serif;outline:none;width:100%;transition:border-color 0.2s;}
+        .vf-input:focus{border-color:rgba(0,200,150,0.35);box-shadow:0 0 0 3px rgba(0,200,150,0.08);}
         select.vf-input{cursor:pointer;}
-        select.vf-input option{background:#120d00;color:#f5e6c8;}
-        .vf-upload{border:2px dashed rgba(212,175,55,0.2);border-radius:14px;padding:1.1rem;text-align:center;cursor:pointer;transition:all 0.2s;background:rgba(212,175,55,0.02);margin-bottom:0.75rem;}
-        .vf-upload:hover{border-color:rgba(212,175,55,0.4);background:rgba(212,175,55,0.05);}
-        .vf-upload.done{border-style:solid;border-color:rgba(212,175,55,0.35);background:rgba(212,175,55,0.06);}
+        select.vf-input option{background:#081a14;color:#e8f8f4;}
+        .vf-upload{border:2px dashed rgba(0,200,150,0.2);border-radius:14px;padding:1.1rem;text-align:center;cursor:pointer;transition:all 0.2s;background:rgba(0,200,150,0.02);margin-bottom:0.75rem;}
+        .vf-upload:hover{border-color:rgba(0,200,150,0.4);background:rgba(0,200,150,0.05);}
+        .vf-upload.done{border-style:solid;border-color:rgba(0,200,150,0.35);background:rgba(0,200,150,0.06);}
         .vf-preview{width:100%;max-height:110px;object-fit:cover;border-radius:9px;margin-top:0.4rem;}
-        .vf-upload-label{font-family:"Playfair Display",serif;font-weight:700;font-size:0.85rem;color:#d4af37;margin-bottom:0.2rem;}
-        .vf-upload-hint{font-size:0.72rem;color:#8a7040;}
+        .vf-upload-label{font-family:"Inter",serif;font-weight:700;font-size:0.85rem;color:#00c896;margin-bottom:0.2rem;}
+        .vf-upload-hint{font-size:0.72rem;color:#5a8a7a;}
         .vf-id-tabs{display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.9rem;}
-        .vf-id-tab{padding:0.4rem 0.8rem;border-radius:20px;border:1px solid rgba(212,175,55,0.15);background:none;color:#8a7040;font-size:0.78rem;cursor:pointer;font-family:"DM Sans",sans-serif;transition:all 0.18s;}
-        .vf-id-tab.active{background:rgba(212,175,55,0.12);border-color:rgba(212,175,55,0.35);color:#d4af37;font-weight:600;}
-        .vf-warning{background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.2);border-radius:11px;padding:0.75rem;margin-bottom:1rem;font-size:0.78rem;color:#e74c3c;line-height:1.5;}
-        .vf-tip{background:rgba(212,175,55,0.06);border:1px solid rgba(212,175,55,0.15);border-radius:11px;padding:0.75rem;margin-bottom:0.9rem;font-size:0.78rem;color:#8a7040;line-height:1.5;}
-        .vf-tip b{color:#d4af37;}
-        .vf-pending{background:rgba(243,156,18,0.08);border:1px solid rgba(243,156,18,0.2);border-radius:14px;padding:1.2rem;text-align:center;}
-        .vf-save-btn{width:100%;padding:0.9rem;border:none;border-radius:13px;background:linear-gradient(135deg,#b8960c,#d4af37);font-family:"Playfair Display",serif;font-weight:700;font-size:1rem;color:#0a0800;cursor:pointer;box-shadow:0 0 20px rgba(212,175,55,0.25);transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:0.5rem;margin-top:1rem;}
+        .vf-id-tab{padding:0.4rem 0.8rem;border-radius:20px;border:1px solid rgba(0,200,150,0.15);background:none;color:#5a8a7a;font-size:0.78rem;cursor:pointer;font-family:"DM Sans",sans-serif;transition:all 0.18s;}
+        .vf-id-tab.active{background:rgba(0,200,150,0.12);border-color:rgba(0,200,150,0.35);color:#00c896;font-weight:600;}
+        .vf-warning{background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.2);border-radius:11px;padding:0.75rem;margin-bottom:1rem;font-size:0.78rem;color:#ff4757;line-height:1.5;}
+        .vf-tip{background:rgba(0,200,150,0.06);border:1px solid rgba(0,200,150,0.15);border-radius:11px;padding:0.75rem;margin-bottom:0.9rem;font-size:0.78rem;color:#5a8a7a;line-height:1.5;}
+        .vf-tip b{color:#00c896;}
+        .vf-pending{background:rgba(0,200,150,0.08);border:1px solid rgba(0,200,150,0.2);border-radius:14px;padding:1.2rem;text-align:center;}
+        .vf-save-btn{width:100%;padding:0.9rem;border:none;border-radius:13px;background:linear-gradient(135deg,#00a87a,#00c896);font-family:"Inter",serif;font-weight:700;font-size:1rem;color:#050f0c;cursor:pointer;box-shadow:0 0 20px rgba(0,200,150,0.25);transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:0.5rem;margin-top:1rem;}
         .vf-save-btn:hover{transform:translateY(-2px);}
         .vf-save-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
-        .toast{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px)+90px);left:50%;transform:translateX(-50%);background:#120d00;border:1px solid rgba(212,175,55,0.3);border-radius:12px;padding:0.65rem 1.3rem;font-weight:700;font-size:0.85rem;z-index:800;animation:tIn 0.3s ease;white-space:nowrap;color:#d4af37;}
+        .toast{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px)+90px);left:50%;transform:translateX(-50%);background:#081a14;border:1px solid rgba(0,200,150,0.3);border-radius:12px;padding:0.65rem 1.3rem;font-weight:700;font-size:0.85rem;z-index:800;animation:tIn 0.3s ease;white-space:nowrap;color:#00c896;}
         @keyframes tIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-        .spinner{width:16px;height:16px;border:2px solid rgba(10,8,0,0.3);border-top-color:#0a0800;border-radius:50%;animation:spin 0.7s linear infinite;}
+        .spinner{width:16px;height:16px;border:2px solid rgba(10,8,0,0.3);border-top-color:#050f0c;border-radius:50%;animation:spin 0.7s linear infinite;}
         @keyframes spin{to{transform:rotate(360deg)}}
         @media(max-width:480px){.vf-grid{grid-template-columns:1fr;}.vf-field.full{grid-column:1;}}
       `}</style>
@@ -149,10 +149,10 @@ export default function VerifyPage() {
       {toast&&<div className="toast">{toast}</div>}
 
       <div style={{display:"flex",alignItems:"center",gap:"0.75rem",marginBottom:"1.2rem"}}>
-        <button onClick={()=>router.back()} style={{background:"rgba(212,175,55,0.08)",border:"1px solid rgba(212,175,55,0.15)",borderRadius:"10px",padding:"0.5rem 0.75rem",color:"#d4af37",cursor:"pointer",fontSize:"0.85rem",fontFamily:"Playfair Display,serif",fontWeight:700}}>← Back</button>
+        <button onClick={()=>router.back()} style={{background:"rgba(0,200,150,0.08)",border:"1px solid rgba(0,200,150,0.15)",borderRadius:"10px",padding:"0.5rem 0.75rem",color:"#00c896",cursor:"pointer",fontSize:"0.85rem",fontFamily:"Inter,serif",fontWeight:700}}>← Back</button>
         <div>
-          <div style={{fontFamily:"Playfair Display,serif",fontWeight:800,fontSize:"1.2rem"}}>Identity Verification</div>
-          <div style={{fontSize:"0.75rem",color:"#8a7040"}}>Complete all sections to verify your account</div>
+          <div style={{fontFamily:"Inter,serif",fontWeight:800,fontSize:"1.2rem"}}>Identity Verification</div>
+          <div style={{fontSize:"0.75rem",color:"#5a8a7a"}}>Complete all sections to verify your account</div>
         </div>
       </div>
 
@@ -267,8 +267,8 @@ export default function VerifyPage() {
           {kycSubmitted?(
             <div className="vf-pending">
               <div style={{fontSize:"2.5rem",marginBottom:"0.75rem"}}>⏳</div>
-              <div style={{fontFamily:"Playfair Display,serif",fontWeight:800,fontSize:"1.1rem",color:"#f39c12",marginBottom:"0.4rem"}}>Documents Under Review</div>
-              <div style={{fontSize:"0.82rem",color:"#8a7040",lineHeight:1.5}}>Your documents have been submitted. Our team will verify within 24-48 hours.</div>
+              <div style={{fontFamily:"Inter,serif",fontWeight:800,fontSize:"1.1rem",color:"#00c896",marginBottom:"0.4rem"}}>Documents Under Review</div>
+              <div style={{fontSize:"0.82rem",color:"#5a8a7a",lineHeight:1.5}}>Your documents have been submitted. Our team will verify within 24-48 hours.</div>
             </div>
           ):(
             <>
@@ -285,11 +285,11 @@ export default function VerifyPage() {
                 <input type="file" accept="image/*,application/pdf" style={{display:"none"}} ref={idFrontRef} onChange={e=>handleFileUpload(e.target.files[0],setIdFront,setIdFrontPrev)}/>
                 <input type="file" accept="image/*,application/pdf" style={{display:"none"}} ref={idBackRef}  onChange={e=>handleFileUpload(e.target.files[0],setIdBack,setIdBackPrev)}/>
                 <div className={"vf-upload"+(idFront?" done":"")} onClick={()=>idFrontRef.current?.click()}>
-                  {idFrontPrev?<><img src={idFrontPrev} className="vf-preview" alt="ID Front"/><div style={{fontSize:"0.72rem",color:"#d4af37",marginTop:"0.3rem",fontWeight:600}}>✓ {idFront?.name}</div></>
+                  {idFrontPrev?<><img src={idFrontPrev} className="vf-preview" alt="ID Front"/><div style={{fontSize:"0.72rem",color:"#00c896",marginTop:"0.3rem",fontWeight:600}}>✓ {idFront?.name}</div></>
                   :<><div style={{fontSize:"1.6rem",marginBottom:"0.3rem"}}>📄</div><div className="vf-upload-label">ID Front Side *</div><div className="vf-upload-hint">Tap to upload front of your {idTypes.find(t=>t.v===idType)?.l}</div></>}
                 </div>
                 <div className={"vf-upload"+(idBack?" done":"")} onClick={()=>idBackRef.current?.click()}>
-                  {idBackPrev?<><img src={idBackPrev} className="vf-preview" alt="ID Back"/><div style={{fontSize:"0.72rem",color:"#d4af37",marginTop:"0.3rem",fontWeight:600}}>✓ {idBack?.name}</div></>
+                  {idBackPrev?<><img src={idBackPrev} className="vf-preview" alt="ID Back"/><div style={{fontSize:"0.72rem",color:"#00c896",marginTop:"0.3rem",fontWeight:600}}>✓ {idBack?.name}</div></>
                   :<><div style={{fontSize:"1.6rem",marginBottom:"0.3rem"}}>📄</div><div className="vf-upload-label">ID Back Side</div><div className="vf-upload-hint">Tap to upload back of your ID</div></>}
                 </div>
                 <div className="vf-tip"><b>Requirements:</b> All 4 corners visible · Clear image · Not expired · JPG/PNG/PDF max 5MB</div>
@@ -299,7 +299,7 @@ export default function VerifyPage() {
                 <div className="vf-section-title">🤳 Selfie / Liveness Check *</div>
                 <input type="file" accept="image/*" style={{display:"none"}} ref={selfieRef} onChange={e=>handleFileUpload(e.target.files[0],setSelfie,setSelfiePrev)}/>
                 <div className={"vf-upload"+(selfie?" done":"")} onClick={()=>selfieRef.current?.click()}>
-                  {selfiePrev?<><img src={selfiePrev} className="vf-preview" alt="Selfie"/><div style={{fontSize:"0.72rem",color:"#d4af37",marginTop:"0.3rem",fontWeight:600}}>✓ {selfie?.name}</div></>
+                  {selfiePrev?<><img src={selfiePrev} className="vf-preview" alt="Selfie"/><div style={{fontSize:"0.72rem",color:"#00c896",marginTop:"0.3rem",fontWeight:600}}>✓ {selfie?.name}</div></>
                   :<><div style={{fontSize:"1.6rem",marginBottom:"0.3rem"}}>🤳</div><div className="vf-upload-label">Selfie Holding Your ID *</div><div className="vf-upload-hint">Hold your ID next to your face, look at camera</div></>}
                 </div>
                 <div className="vf-tip"><b>Instructions:</b> Hold ID clearly visible · Face must be clear · Good lighting · No sunglasses or hat</div>
@@ -309,7 +309,7 @@ export default function VerifyPage() {
                 <div className="vf-section-title">🏠 Proof of Address</div>
                 <input type="file" accept="image/*,application/pdf" style={{display:"none"}} ref={addressRef} onChange={e=>handleFileUpload(e.target.files[0],setAddressDoc,setAddrPrev)}/>
                 <div className={"vf-upload"+(addressDoc?" done":"")} onClick={()=>addressRef.current?.click()}>
-                  {addrPrev?<><img src={addrPrev} className="vf-preview" alt="Address Doc"/><div style={{fontSize:"0.72rem",color:"#d4af37",marginTop:"0.3rem",fontWeight:600}}>✓ {addressDoc?.name}</div></>
+                  {addrPrev?<><img src={addrPrev} className="vf-preview" alt="Address Doc"/><div style={{fontSize:"0.72rem",color:"#00c896",marginTop:"0.3rem",fontWeight:600}}>✓ {addressDoc?.name}</div></>
                   :<><div style={{fontSize:"1.6rem",marginBottom:"0.3rem"}}>📃</div><div className="vf-upload-label">Utility Bill / Bank Statement</div><div className="vf-upload-hint">Must show name & address, not older than 3 months</div></>}
                 </div>
               </div>

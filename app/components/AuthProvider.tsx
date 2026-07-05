@@ -23,7 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("finova_user");
+      const saved = localStorage.getItem("nexora_user");
       if (saved) setUser(JSON.parse(saved));
     } catch {}
     setChecked(true);
@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await new Promise(r => setTimeout(r, 900));
     const newUser = { name, email, phone, country };
     setUser(newUser);
-    localStorage.setItem("finova_user", JSON.stringify(newUser));
+    localStorage.setItem("nexora_user", JSON.stringify(newUser));
     localStorage.setItem("finova_pw", btoa(password));
     return true;
   };
@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string): Promise<boolean> => {
     await new Promise(r => setTimeout(r, 800));
     try {
-      const saved   = localStorage.getItem("finova_user");
+      const saved   = localStorage.getItem("nexora_user");
       const savedPw = localStorage.getItem("finova_pw");
       if (saved && savedPw && savedPw === btoa(password)) {
         const u = JSON.parse(saved);
@@ -60,12 +60,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem("finova_user");
+    localStorage.removeItem("nexora_user");
     router.replace("/login");
   };
 
   if (!checked) return (
-    <div style={{background:"#080f1a",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:"1rem"}}>
+    <div style={{background:"#060f0c",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:"1rem"}}>
       <svg width="44" height="44" viewBox="0 0 32 32" fill="none">
         <path d="M6 26L14 10L20 20L24 14L28 26" stroke="#2ecc71" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
         <circle cx="6" cy="26" r="2" fill="#2ecc71"/>

@@ -60,7 +60,7 @@ interface WalletCtx {
 }
 
 const Ctx  = createContext<WalletCtx | null>(null);
-const KEY  = "finova_user";
+const KEY  = "nexora_user";
 const NGN  = 1640;
 const RATES: Record<string, number> = { btc: 42350, eth: 3800, usdt: 1, bnb: 320 };
 

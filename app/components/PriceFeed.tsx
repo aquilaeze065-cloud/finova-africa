@@ -4,9 +4,9 @@ import { useState, useEffect, useCallback } from "react";
 interface CoinPrice { id:string; symbol:string; name:string; icon:string; color:string; price:number; change:number; prev:number; }
 
 const COINS = [
-  { id:"bitcoin",     symbol:"BTC",  name:"Bitcoin",  icon:"₿",  color:"#f7931a" },
+  { id:"bitcoin",     symbol:"BTC",  name:"Bitcoin",  icon:"₿",  color:"#00c896" },
   { id:"ethereum",    symbol:"ETH",  name:"Ethereum", icon:"⟠",  color:"#627eea" },
-  { id:"binancecoin", symbol:"BNB",  name:"BNB",      icon:"🔶", color:"#f3ba2f" },
+  { id:"binancecoin", symbol:"BNB",  name:"BNB",      icon:"🔶", color:"#00c896" },
   { id:"tether",      symbol:"USDT", name:"Tether",   icon:"₮",  color:"#26a17b" },
   { id:"solana",      symbol:"SOL",  name:"Solana",   icon:"◎",  color:"#9945ff" },
   { id:"ripple",      symbol:"XRP",  name:"XRP",      icon:"✕",  color:"#346aa9" },
@@ -46,7 +46,7 @@ export function PriceTicker() {
   return (
     <>
       <style>{`
-        .ticker-wrap{overflow:hidden;background:rgba(8,15,26,0.95);border-bottom:1px solid rgba(46,204,113,0.1);height:34px;display:flex;align-items:center;}
+        .ticker-wrap{overflow:hidden;background:rgba(6,15,12,0.95);border-bottom:1px solid rgba(46,204,113,0.1);height:34px;display:flex;align-items:center;}
         .ticker-track{display:flex;animation:tickerScroll 35s linear infinite;white-space:nowrap;}
         .ticker-track:hover{animation-play-state:paused;}
         @keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
@@ -60,14 +60,14 @@ export function PriceTicker() {
       <div className="ticker-wrap">
         <div className="ticker-live"><div className="t-pulse"/>LIVE</div>
         {loading?<div style={{fontSize:"0.75rem",color:"#7a9bbf",padding:"0 1rem"}}>Loading prices…</div>
-        :error?<div style={{fontSize:"0.75rem",color:"#e74c3c",padding:"0 1rem"}}>Price feed unavailable</div>
+        :error?<div style={{fontSize:"0.75rem",color:"#ff4757",padding:"0 1rem"}}>Price feed unavailable</div>
         :<div className="ticker-track">
           {[...list,...list].map((c,i)=>(
             <span key={i} className="ticker-item">
               <span style={{color:c.color}}>{c.icon}</span>
               <span className="ticker-sym">{c.symbol}</span>
               <span style={{fontWeight:600}}>${c.price.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
-              <span style={{fontSize:"0.72rem",fontWeight:700,color:c.change>=0?"#2ecc71":"#e74c3c"}}>{c.change>=0?"+":""}{c.change.toFixed(2)}%</span>
+              <span style={{fontSize:"0.72rem",fontWeight:700,color:c.change>=0?"#2ecc71":"#ff4757"}}>{c.change>=0?"+":""}{c.change.toFixed(2)}%</span>
               <span className="ticker-dot"/>
             </span>
           ))}
@@ -84,7 +84,7 @@ export function PriceTable() {
   return (
     <>
       <style>{`
-        .pt-wrap{background:#0a1628;border:1px solid rgba(255,255,255,0.06);border-radius:18px;overflow:hidden;}
+        .pt-wrap{background:#081a14;border:1px solid rgba(255,255,255,0.06);border-radius:18px;overflow:hidden;}
         .pt-head{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.2rem;border-bottom:1px solid rgba(255,255,255,0.06);}
         .pt-row{display:flex;align-items:center;gap:0.75rem;padding:0.85rem 1.2rem;border-bottom:1px solid rgba(255,255,255,0.04);transition:background 0.15s;}
         .pt-row:last-child{border-bottom:none;}
@@ -102,13 +102,13 @@ export function PriceTable() {
           <button onClick={refresh} style={{padding:"0.3rem 0.7rem",background:"rgba(46,204,113,0.1)",border:"1px solid rgba(46,204,113,0.25)",borderRadius:"8px",color:"#2ecc71",fontSize:"0.75rem",fontWeight:700,cursor:"pointer",fontFamily:"'Syne',sans-serif"}}>↻ Refresh</button>
         </div>
         {loading?[1,2,3,4,5,6].map(i=><div key={i} className="pt-skel"/>)
-        :error?<div style={{padding:"2rem",textAlign:"center",color:"#e74c3c",fontSize:"0.85rem"}}>⚠️ Could not load prices.<br/><button onClick={refresh} style={{marginTop:"0.75rem",padding:"0.3rem 0.7rem",background:"rgba(231,76,60,0.1)",border:"1px solid rgba(231,76,60,0.3)",borderRadius:"8px",color:"#e74c3c",cursor:"pointer"}}>Retry</button></div>
+        :error?<div style={{padding:"2rem",textAlign:"center",color:"#ff4757",fontSize:"0.85rem"}}>⚠️ Could not load prices.<br/><button onClick={refresh} style={{marginTop:"0.75rem",padding:"0.3rem 0.7rem",background:"rgba(231,76,60,0.1)",border:"1px solid rgba(231,76,60,0.3)",borderRadius:"8px",color:"#ff4757",cursor:"pointer"}}>Retry</button></div>
         :list.map(c=>(
           <div key={c.symbol} className="pt-row">
             <div className="pt-icon" style={{background:`${c.color}22`,color:c.color}}>{c.icon}</div>
             <div style={{flex:1}}><div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:"0.88rem"}}>{c.name}</div><div style={{fontSize:"0.72rem",color:"#7a9bbf"}}>{c.symbol}</div></div>
             <div style={{textAlign:"right",marginRight:"0.5rem"}}><div style={{fontSize:"0.7rem",color:"#2ecc71"}}>₦{(c.price*NGN).toLocaleString(undefined,{maximumFractionDigits:0})}</div></div>
-            <div style={{textAlign:"right"}}><div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:"0.88rem"}}>${c.price.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div style={{fontSize:"0.72rem",color:c.change>=0?"#2ecc71":"#e74c3c",fontWeight:700}}>{c.change>=0?"+":""}{c.change.toFixed(2)}%</div></div>
+            <div style={{textAlign:"right"}}><div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:"0.88rem"}}>${c.price.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div style={{fontSize:"0.72rem",color:c.change>=0?"#2ecc71":"#ff4757",fontWeight:700}}>{c.change>=0?"+":""}{c.change.toFixed(2)}%</div></div>
           </div>
         ))}
       </div>
