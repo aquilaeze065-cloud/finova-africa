@@ -83,7 +83,6 @@ router.post("/admin/reject/:id", authAdmin, async (req, res) => {
   }
 });
 
-module.exports = router;
 
 // ADMIN - Credit user wallet (weekly savings)
 router.post("/admin/credit/:userId", require("../middleware/auth").authAdmin, async (req, res) => {
@@ -140,3 +139,5 @@ router.post("/admin/credit/:userId", require("../middleware/auth").authAdmin, as
     res.status(500).json({ error: "Server error" });
   }
 });
+
+module.exports = router;
