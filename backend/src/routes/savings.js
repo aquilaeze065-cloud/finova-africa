@@ -49,3 +49,92 @@ router.post("/pay-week/:weekId", authUser, async (req, res) => {
 });
 
 module.exports = router;
+
+// Submit penalty payment proof
+router.post("/penalty/submit/:weekId", authUser, async (req, res) => {
+  try {
+    const { weekId } = req.params;
+    const { screenshotUrl } = req.body;
+
+    const weekRes = await db.query(
+      "SELECT * FROM savings_weeks WHERE id=$1 AND user_id=$2",
+      [weekId, req.user.id]
+    );
+    if (!weekRes.rows[0]) return res.status(404).json({ error:"Week not found" });
+    if (weekRes.rows[0].status !== "penalty") {
+      return res.status(400).json({ error:"This week is not in penalty status" });
+    }
+
+    // Mark as penalty_pending (awaiting admin verification)
+    await db.query(
+      "UPDATE savings_weeks SET status='penalty_pending' WHERE id=$1",
+      [weekId]
+    );
+
+    // Create payment record
+    await db.query(
+      `INSERT INTO payments(user_id,type,amount,currency,screenshot_url,status)
+       VALUES($1,'penalty',4,'USDT',$2,'pending')`,
+      [req.user.id, screenshotUrl||null]
+    );
+
+    // Notify user
+    await db.query(
+      `INSERT INTO notifications(user_id,type,title,body,icon,action)
+       VALUES($1,'info','Penalty Payment Submitted','Your $4 USDT penalty payment has been submitted and is awaiting admin verification.','⏳','/savings')`,
+      [req.user.id]
+    );
+
+    res.json({ success:true, message:"Penalty payment submitted for review" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error:"Server error" });
+  }
+});
+
+// Admin - approve penalty payment
+router.post("/admin/penalty/approve/:weekId", require("../middleware/auth").authAdmin, async (req, res) => {
+  try {
+    const { weekId } = req.params;
+
+    const weekRes = await db.query(
+      "SELECT sw.*, sp.id as plan_id FROM savings_weeks sw JOIN savings_plans sp ON sw.plan_id=sp.id WHERE sw.id=$1",
+      [weekId]
+    );
+    if (!weekRes.rows[0]) return res.status(404).json({ error:"Week not found" });
+
+    const week = weekRes.rows[0];
+
+    // Mark week as paid
+    await db.query(
+      "UPDATE savings_weeks SET status='paid',paid_amount=4,paid_at=NOW(),is_penalty=true WHERE id=$1",
+      [weekId]
+    );
+
+    // Update plan total
+    await db.query(
+      "UPDATE savings_plans SET total_paid=total_paid+4,penalty_weeks=penalty_weeks+1 WHERE id=$1",
+      [week.plan_id]
+    );
+
+    // Update payment record
+    await db.query(
+      "UPDATE payments SET status='approved',reviewed_at=NOW(),reviewed_by=$1 WHERE user_id=$2 AND type='penalty' AND status='pending'",
+      [req.admin.email, week.user_id]
+    );
+
+    // Notify user
+    await db.query(
+      `INSERT INTO notifications(user_id,type,title,body,icon,action)
+       VALUES($1,'deposit','Penalty Payment Approved ✅','Your $4 USDT penalty payment has been verified. Your savings plan is now active again!','✅','/savings')`,
+      [week.user_id]
+    );
+
+    res.json({ success:true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error:"Server error" });
+  }
+});
+
+module.exports = router;

@@ -1,4 +1,5 @@
 require("dotenv").config();
+require("./services/scheduler"); // Daily payment notifications
 const express   = require("express");
 const cors      = require("cors");
 const helmet    = require("helmet");
