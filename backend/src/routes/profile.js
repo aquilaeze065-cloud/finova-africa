@@ -39,7 +39,7 @@ router.post("/notifications", authUser, async (req, res) => {
   try {
     const s = req.body;
     await db.query(
-      "INSERT INTO user_settings(user_id,weekly_reminder,payment_confirm,kyc_updates,price_alerts,promotions,admin_messages) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(user_id) DO UPDATE SET weekly_reminder=$2,payment_confirm=$3,kyc_updates=$4,price_alerts=$5,promotions=$6,admin_messages=$7,updated_at=NOW()",
+      "INSERT INTO user_settings(user_id,weekly $3,payment_confirm=$3,kyc_updates=$4,price_alerts=$5,promotions=$6,admin_messages=$7,updated_at=NOW()",
       [req.user.id,s.weeklyReminder,s.paymentConfirm,s.kycUpdates,s.priceAlerts,s.promotions,s.adminMessages]
     );
     res.json({ success:true });

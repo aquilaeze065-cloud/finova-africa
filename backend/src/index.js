@@ -1,79 +1,96 @@
 require("dotenv").config();
-require("./services/scheduler"); // Daily payment notifications
-const express   = require("express");
-const cors      = require("cors");
-const helmet    = require("helmet");
-const morgan    = require("morgan");
-const { authLimiter, apiLimiter, adminLimiter, sanitizeInput, blockSuspicious } = require("./middleware/security");
+require("./services/scheduler");
+
+const express = require("express");
+const cors    = require("cors");
+const morgan  = require("morgan");
+
+const {
+  authLimiter, otpLimiter, apiLimiter, adminLimiter,
+  sanitizeInput, blockSuspicious, securityHeaders,
+  bruteForceProtection, hppProtect,
+  hideServerInfo, activityLogger,
+} = require("./middleware/security");
 
 const app = express();
 
-// Security headers
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc:  ["'self'", "'unsafe-inline'"],
-      styleSrc:   ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc:    ["'self'", "https://fonts.gstatic.com"],
-      imgSrc:     ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", process.env.FRONTEND_URL || "*"],
-    },
-  },
-  crossOriginEmbedderPolicy: false,
-}));
+// ── SECURITY HEADERS (first) ──
+securityHeaders(app);
+app.use(hideServerInfo);
 
-// CORS - only allow your frontend
+// ── CORS ──
+const ALLOWED = [
+  process.env.FRONTEND_URL || "https://finova-africa.vercel.app",
+  "https://finova-africa.vercel.app",
+  "https://nexora.com",
+  "http://localhost:3000",
+];
 app.use(cors({
-  origin: [
-    process.env.FRONTEND_URL || "http://localhost:3000",
-    "https://finova-africa.vercel.app",
-    "http://localhost:3000",
-  ],
+  origin: (origin, cb) => {
+    if (!origin || ALLOWED.includes(origin)) return cb(null, true);
+    console.warn(`🚨 Blocked CORS from: ${origin}`);
+    cb(new Error("Not allowed by CORS"));
+  },
   credentials: true,
-  methods: ["GET","POST","PUT","DELETE","OPTIONS"],
-  allowedHeaders: ["Content-Type","Authorization"],
+  methods: ["GET","POST","PUT","DELETE","OPTIONS","PATCH"],
+  allowedHeaders: ["Content-Type","Authorization","X-Requested-With"],
 }));
 
-app.use(express.json({ limit: "5mb" }));
-app.use(express.urlencoded({ extended: true, limit: "5mb" }));
-app.use(morgan("combined"));
+// ── BODY PARSER ──
+app.use(express.json({ limit:"5mb" }));
+app.use(express.urlencoded({ extended:true, limit:"5mb" }));
 
-// Security middleware on all routes
-app.use(sanitizeInput);
-app.use(blockSuspicious);
+// ── SECURITY MIDDLEWARE ──
+app.use(hppProtect);           // HTTP parameter pollution
+app.use(blockSuspicious);      // Block known attacks
+app.use(sanitizeInput);        // Clean all inputs
+app.use(bruteForceProtection); // IP brute force protection
+app.use(activityLogger);       // Log suspicious activity
+
+// ── LOGGING ──
+if (process.env.NODE_ENV !== "production") app.use(morgan("dev"));
+else app.use(morgan("combined"));
+
+// ── GLOBAL RATE LIMIT ──
 app.use("/api", apiLimiter);
 
-// Hide server info
-app.disable("x-powered-by");
-
-// Routes with specific rate limits
+// ── ROUTES ──
 app.use("/api/auth",          authLimiter,  require("./routes/auth"));
+app.use("/api/otp",           otpLimiter,   require("./routes/otp"));
 app.use("/api/payments",                    require("./routes/payments"));
 app.use("/api/savings",                     require("./routes/savings"));
 app.use("/api/kyc",                         require("./routes/kyc"));
 app.use("/api/admin",         adminLimiter, require("./routes/admin"));
 app.use("/api/notifications",               require("./routes/notifications"));
 app.use("/api/profile",                     require("./routes/profile"));
+app.use("/api/support",                     require("./routes/support"));
+app.use("/api/wallets",                     require("./routes/wallets"));
 
-// Health check
+// ── HEALTH CHECK ──
 app.get("/health", (req, res) => res.json({
-  status: "ok",
-  service: "NEXORA API",
-  version: "1.0.0",
+  status:"ok", service:"NEXORA API", version:"2.0.0",
+  timestamp: new Date().toISOString(),
 }));
 
-// 404
-app.use((req, res) => res.status(404).json({ error: "Not found" }));
+// ── 404 ──
+app.use((req, res) => {
+  res.status(404).json({ error:"Not found" });
+});
 
-// Error handler - never expose stack traces
+// ── ERROR HANDLER (never expose internals) ──
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: "Something went wrong. Please try again." });
+  console.error("Error:", err.message);
+  // CORS error
+  if (err.message === "Not allowed by CORS") {
+    return res.status(403).json({ error:"Access denied" });
+  }
+  res.status(500).json({ error:"Something went wrong. Please try again." });
 });
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log("🚀 NEXORA API → http://localhost:" + PORT);
-  console.log("🔒 Security: Rate limiting + Input sanitization + CSP headers active");
+  console.log(`\n🚀 NEXORA API running on port ${PORT}`);
+  console.log(`🔒 Security: Helmet + CORS + Rate Limiting + XSS + SQLi Protection`);
+  console.log(`🛡️  Brute Force Protection: Active`);
+  console.log(`📊 Environment: ${process.env.NODE_ENV}\n`);
 });
