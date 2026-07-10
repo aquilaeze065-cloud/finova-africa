@@ -9,7 +9,7 @@ const { authUser } = require("../middleware/auth");
 // SIGNUP - sends email verification
 router.post("/signup", async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, referredBy, phone } = req.body;
     if (!name||!email||!password) return res.status(400).json({ error:"All fields required" });
     if (password.length<8) return res.status(400).json({ error:"Password too short" });
 
@@ -63,6 +63,33 @@ router.post("/signup", async (req, res) => {
       }
     } catch(mailErr) {
       console.log("Email send failed (non-critical):", mailErr.message);
+    }
+
+    // Process referral bonus
+    if (referredBy) {
+      try {
+        const referrer = await db.query("SELECT id FROM users WHERE referral_code=$1",[referredBy]);
+        if (referrer.rows[0]) {
+          // Credit $5 bonus to referrer
+          await db.query(
+            "INSERT INTO referrals(referrer_id,referred_id,bonus_amount,status) VALUES($1,$2,5.00,'active')",
+            [referrer.rows[0].id, user.id]
+          );
+          await db.query(
+            "UPDATE users SET referral_bonus=referral_bonus+5 WHERE id=$1",
+            [referrer.rows[0].id]
+          );
+          // Notify referrer
+          await db.query(
+            `INSERT INTO notifications(user_id,type,title,body,icon,action)
+             VALUES($1,'bonus','🎉 Referral Bonus!','You earned $5 USDT referral bonus! Someone signed up using your referral code.','🎁','/my-progress')`,
+            [referrer.rows[0].id]
+          );
+          console.log("✅ Referral bonus credited to", referrer.rows[0].id);
+        }
+      } catch(refErr) {
+        console.error("Referral error:", refErr.message);
+      }
     }
 
     const authToken = signUser({ id:user.id, email:user.email });
