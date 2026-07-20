@@ -161,7 +161,7 @@ router.post("/signin", async (req, res) => {
     const { email, password } = req.body;
     if (!email||!password) return res.status(400).json({ error:"All fields required" });
     const result = await db.query(
-      "SELECT id,name,email,password_hash,account_status,reg_fee_paid,contract_signed,kyc_status,email_verified,photo_url,created_at FROM users WHERE email=$1",
+      "SELECT id,name,email,password_hash,account_status,reg_fee_paid,contract_signed,kyc_status,email_verified,photo_url,created_at,referral_code,referral_bonus,phone FROM users WHERE email=$1",
       [email]
     );
     if (!result.rows[0]) return res.status(404).json({ error:"No account found with this email" });
