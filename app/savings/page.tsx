@@ -1,430 +1,357 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import MobileLayout from "../components/MobileLayout";
 
-const WEEKLY_AMOUNT   = 2;
-const PENALTY_AMOUNT  = 4;
-const TOTAL_WEEKS     = 52;
-const APY             = 45;
-const VOUCHER         = 15;
-const MAX_MISSES      = 5;
-const GRACE_DAYS      = 1;
-
-function generateWeeks(startDate: any) {
-  const weeks = [];
-  for (let i = 0; i < TOTAL_WEEKS; i++) {
-    const due = new Date(startDate);
-    due.setDate(due.getDate() + i * 7);
-    const grace = new Date(due);
-    grace.setDate(grace.getDate() + GRACE_DAYS);
-    weeks.push({
-      week:       i + 1,
-      dueDate:    due.toISOString(),
-      graceDate:  grace.toISOString(),
-      status:     "upcoming",
-      paidAmount: 0,
-      paidAt:     null,
-      penalty:    false,
-    });
-  }
-  return weeks;
-}
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const WEEKLY_AMT = 3;
+const PENALTY_AMT = 4;
 
 export default function SavingsPage() {
   const router  = useRouter();
-  const [plan,   setPlan]   = useState(null);
-  const [paying, setPaying] = useState(null);
-  const [modal,  setModal]  = useState(null);
-  const [toast,  setToast]  = useState("");
+  const fileRef = useRef<any>(null);
+  const [user,        setUser]       = useState<any>(null);
+  const [savings,     setSavings]    = useState<any>(null);
+  const [loading,     setLoading]    = useState(true);
+  const [toast,       setToast]      = useState("");
+  const [toastType,   setToastType]  = useState("ok");
+  const [penaltyWeek, setPenaltyWeek]= useState<any>(null);
+  const [screenshot,  setScreenshot] = useState<string|null>(null);
+  const [submitting,  setSubmitting] = useState(false);
 
-  useEffect(() => {
-    const saved = localStorage.getItem("nexora_savings");
-    if (saved) {
-      const p = JSON.parse(saved);
-      p.weeks = p.weeks.map((w: any) => ({
-        ...w,
-        dueDate:   new Date(w.dueDate),
-        graceDate: new Date(w.graceDate),
-        paidAt:    w.paidAt ? new Date(w.paidAt) : null,
-      }));
-      setPlan(p);
+  useEffect(()=>{
+    const u = JSON.parse(localStorage.getItem("nexora_user")||localStorage.getItem("finova_user")||"{}");
+    setUser(u);
+    const s = JSON.parse(localStorage.getItem("nexora_savings")||localStorage.getItem("finova_savings")||"null");
+    if (s) {
+      // Auto-update week statuses based on dates
+      const now = new Date();
+      s.weeks = s.weeks?.map((w:any)=>{
+        if (w.status === "paid" || w.status === "penalty_pending") return w;
+        const due   = new Date(w.due_date||w.dueDate);
+        const grace = new Date(w.grace_date||w.graceDate||new Date(due.getTime()+86400000));
+        if (now > grace && w.status !== "penalty") return {...w, status:"penalty"};
+        if (now >= due && now <= grace && w.status === "upcoming") return {...w, status:"due"};
+        return w;
+      });
+      setSavings(s);
+      localStorage.setItem("nexora_savings", JSON.stringify(s));
     }
-  }, []);
+    setLoading(false);
+  },[]);
 
-  function savePlan(p: any) {
-    localStorage.setItem("nexora_savings", JSON.stringify(p));
-    setPlan({...p});
+  function showToast(msg:string, type="ok") {
+    setToast(msg); setToastType(type);
+    setTimeout(()=>setToast(""), 4000);
   }
 
-  function startPlan() {
-    const now   = new Date();
-    const weeks = generateWeeks(now);
-    const newPlan = {
-      startDate:    now.toISOString(),
-      endDate:      new Date(now.getTime()+52*7*86400000).toISOString(),
-      status:       "active",
-      totalPaid:    0,
-      missedWeeks:  0,
-      penaltyWeeks: 0,
-      weeks:        weeks,
-    };
-    savePlan(newPlan);
-    showToast("Savings plan started! First payment due today.");
+  function payWeek(week:any) {
+    if (!savings) return;
+
+    // BLOCK if there's an unresolved penalty
+    const hasPenalty = savings.weeks?.some((w:any)=>
+      w.status === "penalty" || w.status === "penalty_pending"
+    );
+    if (hasPenalty && week.status !== "penalty") {
+      showToast("⚠️ You have a pending penalty. Please pay the $4 USDT penalty first to unlock your savings.", "err");
+      return;
+    }
+
+    // Handle penalty week
+    if (week.status === "penalty") {
+      setPenaltyWeek(week);
+      return;
+    }
+
+    // Normal payment
+    const updated = {...savings};
+    updated.weeks = updated.weeks.map((w:any)=>
+      w.week===week.week || w.week_number===week.week_number
+        ? {...w, status:"paid", paid_amount:WEEKLY_AMT, paidAt:new Date().toISOString()}
+        : w
+    );
+    updated.totalPaid = (updated.totalPaid||0) + WEEKLY_AMT;
+
+    setSavings(updated);
+    localStorage.setItem("nexora_savings", JSON.stringify(updated));
+    localStorage.setItem("finova_savings", JSON.stringify(updated));
+    showToast(`✅ Week ${week.week||week.week_number} paid! $${WEEKLY_AMT} USDT recorded.`);
   }
 
-  function payWeek(weekIdx: any) {
-    if (!plan) return;
-    const now    = new Date();
-    const week   = plan.weeks[weekIdx];
-    const isPenalty = week.status === "penalty";
-    const amount    = isPenalty ? PENALTY_AMOUNT : WEEKLY_AMOUNT;
-    setPaying(weekIdx);
-    setTimeout(() => {
-      const updated = {...plan};
-      updated.weeks  = [...plan.weeks];
-      updated.weeks[weekIdx] = {
-        ...week,
-        status:     "paid",
-        paidAmount: amount,
-        paidAt:     now.toISOString(),
-        penalty:    isPenalty,
-      };
-      updated.totalPaid += amount;
-      if (isPenalty) updated.penaltyWeeks += 1;
-
-      // Check if contract complete
-      const paidCount = updated.weeks.filter((w: any) =>w.status==="paid").length;
-      if (paidCount === TOTAL_WEEKS) updated.status = "completed";
-
-      savePlan(updated);
-      setPaying(null);
-      showToast(isPenalty ? "Penalty paid! Back on track." : "Week "+week.week+" paid!");
-    }, 1500);
+  function handlePenaltyFile(e:any) {
+    const f = e.target.files?.[0]; if (!f) return;
+    if (f.type.startsWith("image/")) {
+      const url = URL.createObjectURL(f);
+      setScreenshot(url);
+    }
   }
 
-  function syncStatuses() {
-    if (!plan || plan.status !== "active") return;
-    const now     = new Date();
-    const updated = {...plan, weeks: [...plan.weeks]};
-    let missed    = 0;
+  async function submitPenaltyPayment() {
+    if (!penaltyWeek) return;
+    setSubmitting(true);
 
-    updated.weeks = updated.weeks.map((w: any) => {
-      if (w.status === "paid") return w;
-      const due   = new Date(w.dueDate);
-      const grace = new Date(w.graceDate);
-      if (now > grace && w.status !== "penalty") {
-        missed++;
-        return {...w, status:"penalty"};
-      }
-      if (now >= due && now <= grace && w.status === "upcoming") {
-        return {...w, status:"due"};
-      }
-      return w;
+    // Update locally to pending
+    const updated = {...savings};
+    updated.weeks = updated.weeks.map((w:any)=>
+      w.week===penaltyWeek.week || w.week_number===penaltyWeek.week_number
+        ? {...w, status:"penalty_pending"}
+        : w
+    );
+    setSavings(updated);
+    localStorage.setItem("nexora_savings", JSON.stringify(updated));
+    localStorage.setItem("finova_savings", JSON.stringify(updated));
+
+    // Save penalty payment for admin
+    const pays = JSON.parse(localStorage.getItem("nexora_payments")||"[]");
+    pays.unshift({
+      id:"pen_"+Date.now(),
+      userId: user.id||user.userId,
+      userName: user.name,
+      userEmail: user.email,
+      type:"penalty",
+      weekNumber: penaltyWeek.week||penaltyWeek.week_number,
+      amount: PENALTY_AMT,
+      currency:"USDT",
+      screenshot,
+      status:"pending",
+      submittedAt: new Date().toISOString(),
     });
+    localStorage.setItem("nexora_payments", JSON.stringify(pays));
 
-    updated.missedWeeks = updated.weeks.filter((w: any) =>w.status==="penalty"||w.status==="missed").length;
-    if (updated.missedWeeks >= MAX_MISSES && updated.status === "active") {
-      updated.status = "terminated";
+    setSubmitting(false);
+    setPenaltyWeek(null);
+    setScreenshot(null);
+    showToast("⏳ Penalty payment submitted! Admin will verify within 24 hours.", "ok");
+  }
+
+  if (loading||!user) return (
+    <div style={{minHeight:"100vh",background:"#050f0c",display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <div style={{width:"32px",height:"32px",border:"2px solid rgba(0,200,150,0.2)",borderTop:"2px solid #00c896",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  );
+
+  const paidWeeks   = savings?.weeks?.filter((w:any)=>w.status==="paid").length||0;
+  const penaltyWeeks= savings?.weeks?.filter((w:any)=>w.status==="penalty"||w.status==="penalty_pending").length||0;
+  const totalPaid   = savings?.totalPaid||0;
+  const progress    = Math.round((paidWeeks/52)*100);
+  const interest    = +(totalPaid*0.35).toFixed(2);
+  const hasPenalty  = penaltyWeeks > 0;
+  const hasActivePenalty = savings?.weeks?.some((w:any)=>w.status==="penalty");
+  const hasPendingPenalty= savings?.weeks?.some((w:any)=>w.status==="penalty_pending");
+
+  const sc = (s:string) => {
+    switch(s) {
+      case "paid":            return {color:"#00c896", bg:"rgba(0,200,150,0.08)", label:"✓ Paid"};
+      case "due":             return {color:"#f39c12", bg:"rgba(243,156,18,0.08)", label:"⏰ Due Now"};
+      case "penalty":         return {color:"#ff4757", bg:"rgba(255,71,87,0.08)", label:"⚠️ Penalty"};
+      case "penalty_pending": return {color:"#f39c12", bg:"rgba(243,156,18,0.08)", label:"⏳ Verifying"};
+      default:                return {color:"#5a8a7a", bg:"rgba(0,200,150,0.03)", label:"○ Upcoming"};
     }
-    savePlan(updated);
-  }
-
-  useEffect(() => { syncStatuses(); }, [plan?.status]);
-
-  function showToast(msg: any) {
-    setToast(msg);
-    setTimeout(()=>setToast(""),3000);
-  }
-
-  const now          = new Date();
-  const paidWeeks    = plan ? plan.weeks.filter((w: any) =>w.status==="paid").length : 0;
-  const dueWeeks     = plan ? plan.weeks.filter((w: any) =>w.status==="due"||w.status==="penalty") : [];
-  const missedCount  = plan ? plan.weeks.filter((w: any) =>w.status==="penalty").length : 0;
-  const progress     = Math.round((paidWeeks/TOTAL_WEEKS)*100);
-  const totalContrib = plan ? plan.totalPaid : 0;
-  const interest     = +(totalContrib*(APY/100)).toFixed(2);
-  const projectedEnd = +(WEEKLY_AMOUNT*TOTAL_WEEKS*(1+APY/100)+VOUCHER).toFixed(2);
-  const weeksLeft    = TOTAL_WEEKS - paidWeeks;
-  const endDate      = plan ? new Date(plan.endDate).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : "";
-
-  const statusColor = (s) =>
-    s==="paid"?"#2ecc71":s==="due"?"#00c896":s==="penalty"?"#ff4757":s==="upcoming"?"#7a9bbf":"#ff4757";
-  const statusLabel = (s) =>
-    s==="paid"?"✓ Paid":s==="due"?"⏰ Due Now":s==="penalty"?"⚠️ Pay $4 (Penalty)":s==="upcoming"?"Upcoming":"Missed";
-  const statusBg = (s) =>
-    s==="paid"?"rgba(46,204,113,0.1)":s==="due"?"rgba(0,200,150,0.1)":s==="penalty"?"rgba(231,76,60,0.1)":"rgba(255,255,255,0.03)";
+  };
 
   return (
     <MobileLayout activePage="Savings">
       <style>{`
-        .sv-hero{background:linear-gradient(135deg,rgba(46,204,113,0.12),rgba(8,26,20,0.95));border:1px solid rgba(46,204,113,0.2);border-radius:20px;padding:1.4rem;margin-bottom:1.2rem;position:relative;overflow:hidden;}
-        .sv-hero::before{content:"";position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(46,204,113,0.12),transparent 70%);}
-        .sv-stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.7rem;margin-bottom:1.2rem;}
-        .sv-stat{background:#081a14;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:0.85rem;text-align:center;}
-        .sv-stat-val{font-family:"Syne",sans-serif;font-weight:800;font-size:1rem;margin-bottom:0.15rem;}
-        .sv-stat-label{font-size:0.68rem;color:#7a9bbf;line-height:1.3;}
-        .sv-prog-wrap{margin:1rem 0 0.4rem;}
-        .sv-prog-row{display:flex;justify-content:space-between;font-size:0.73rem;color:#7a9bbf;margin-bottom:0.35rem;}
-        .sv-prog-track{height:8px;background:rgba(255,255,255,0.07);border-radius:10px;overflow:hidden;}
-        .sv-prog-fill{height:100%;border-radius:10px;background:linear-gradient(90deg,#27ae60,#2ecc71);transition:width 0.5s;}
-        .sv-week-row{display:flex;align-items:center;gap:0.7rem;padding:0.75rem;border-bottom:1px solid rgba(255,255,255,0.04);transition:background 0.15s;}
-        .sv-week-row:last-child{border-bottom:none;}
-        .sv-week-row:hover{background:rgba(255,255,255,0.02);}
-        .sv-week-num{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:"Syne",sans-serif;font-weight:700;font-size:0.75rem;flex-shrink:0;}
-        .sv-week-info{flex:1;min-width:0;}
-        .sv-week-title{font-family:"Syne",sans-serif;font-weight:700;font-size:0.84rem;}
-        .sv-week-date{font-size:0.7rem;color:#7a9bbf;margin-top:0.1rem;}
-        .sv-badge{padding:0.2rem 0.55rem;border-radius:20px;font-size:0.68rem;font-weight:700;font-family:"Syne",sans-serif;white-space:nowrap;border:1px solid;}
-        .sv-pay-btn{padding:0.4rem 0.9rem;border:none;border-radius:9px;font-family:"Syne",sans-serif;font-weight:700;font-size:0.8rem;cursor:pointer;transition:all 0.18s;white-space:nowrap;flex-shrink:0;}
-        .sv-pay-btn:hover{transform:translateY(-1px);}
-        .sv-alert{border-radius:14px;padding:0.9rem 1rem;margin-bottom:1rem;display:flex;align-items:flex-start;gap:0.65rem;}
-        .sv-alert-icon{font-size:1.2rem;flex-shrink:0;}
-        .sv-alert-title{font-family:"Syne",sans-serif;font-weight:700;font-size:0.88rem;margin-bottom:0.2rem;}
-        .sv-alert-body{font-size:0.78rem;color:#7a9bbf;line-height:1.45;}
-        .sv-voucher{background:linear-gradient(135deg,rgba(0,200,150,0.12),rgba(8,26,20,0.9));border:1px solid rgba(0,200,150,0.25);border-radius:16px;padding:1.1rem;display:flex;align-items:center;gap:0.85rem;margin-bottom:1.2rem;}
-        .sv-voucher-icon{width:48px;height:48px;border-radius:12px;background:rgba(0,200,150,0.15);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;}
-        .sv-start-card{text-align:center;padding:2.5rem 1.5rem;}
-        .toast{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 90px);left:50%;transform:translateX(-50%);background:#0d1b2e;border:1px solid rgba(46,204,113,0.3);border-radius:12px;padding:0.65rem 1.3rem;font-family:"Syne",sans-serif;font-weight:700;font-size:0.85rem;z-index:800;animation:tIn 0.3s ease;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,0.5);}
-        @keyframes tIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-        .spinner{width:14px;height:14px;border:2px solid rgba(5,16,10,0.3);border-top-color:#05100a;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block;}
-        @keyframes spin{to{transform:rotate(360deg)}}
-        @media(max-width:480px){.sv-stats-grid{grid-template-columns:1fr 1fr;}}
+        .sv-card{background:#081a14;border:1px solid rgba(0,200,150,0.12);border-radius:16px;padding:1.1rem;margin-bottom:0.85rem;}
+        .sv-week{display:flex;align-items:center;gap:0.65rem;padding:0.75rem 0;border-bottom:1px solid rgba(0,200,150,0.06);}
+        .sv-week:last-child{border-bottom:none;}
+        .sv-num{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0;}
+        .sv-pay-btn{padding:0.32rem 0.75rem;border-radius:8px;border:none;cursor:pointer;font-size:0.72rem;font-weight:700;font-family:"Inter",sans-serif;transition:all 0.18s;flex-shrink:0;}
+        .sv-pay-btn.primary{background:linear-gradient(135deg,#00a87a,#00c896);color:#050f0c;}
+        .sv-pay-btn.danger{background:linear-gradient(135deg,#c03000,#ff4500);color:#fff;}
+        .sv-pay-btn.disabled{background:rgba(255,255,255,0.06);color:#5a8a7a;cursor:not-allowed;}
+        .sv-pay-btn.pending{background:rgba(243,156,18,0.1);color:#f39c12;border:1px solid rgba(243,156,18,0.2);}
+        .sv-penalty-box{background:rgba(255,71,87,0.06);border:1px solid rgba(255,71,87,0.2);border-radius:14px;padding:1.2rem;margin-bottom:0.85rem;}
+        .sv-lock-box{background:rgba(255,100,0,0.06);border:1px solid rgba(255,100,0,0.2);border-radius:12px;padding:0.9rem;margin-bottom:0.85rem;display:flex;gap:0.6rem;align-items:flex-start;}
+        .sv-prog-track{height:8px;background:rgba(0,200,150,0.1);border-radius:8px;overflow:hidden;margin:0.4rem 0;}
+        .sv-prog-fill{height:100%;border-radius:8px;background:linear-gradient(90deg,#00a87a,#00c896);transition:width 0.5s;}
+        .toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);
+          border-radius:12px;padding:0.65rem 1.2rem;font-weight:700;font-size:0.82rem;
+          z-index:800;animation:tIn 0.3s ease;white-space:nowrap;max-width:90vw;text-align:center;}
+        .toast.ok{background:#081a14;border:1px solid rgba(0,200,150,0.3);color:#00c896;}
+        .toast.err{background:#1a0808;border:1px solid rgba(255,71,87,0.3);color:#ff4757;}
+        @keyframes tIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+        .modal-ov{position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);z-index:500;display:flex;align-items:flex-end;justify-content:center;padding:1rem;}
+        .modal-card{background:#081a14;border:1px solid rgba(255,71,87,0.2);border-radius:20px 20px 16px 16px;padding:1.5rem;width:100%;max-width:420px;}
+        .upload-box{border:2px dashed rgba(255,71,87,0.25);border-radius:12px;padding:1rem;text-align:center;cursor:pointer;transition:all 0.2s;margin-bottom:0.85rem;}
+        .upload-box:hover{border-color:rgba(255,71,87,0.45);background:rgba(255,71,87,0.04);}
+        .upload-box.has{border-style:solid;border-color:rgba(0,200,150,0.3);}
+        .upload-preview{width:100%;max-height:100px;object-fit:cover;border-radius:8px;margin-top:0.4rem;}
       `}</style>
 
-      {toast&&<div className="toast">{toast}</div>}
+      {toast&&<div className={`toast ${toastType}`}>{toast}</div>}
 
-      <h1 className="r-page-title">💰 Weekly Savings</h1>
-      <p className="r-page-sub">Save $2/week · Earn 35% APY · Get $15 voucher</p>
-
-      {/* NO PLAN YET */}
-      {!plan&&(
-        <div className="r-card">
-          <div className="sv-start-card">
-            <div style={{fontSize:"3rem",marginBottom:"1rem"}}>🏦</div>
-            <div style={{fontFamily:"Syne,sans-serif",fontWeight:800,fontSize:"1.2rem",marginBottom:"0.5rem"}}>Start Your Savings Journey</div>
-            <div style={{fontSize:"0.85rem",color:"#7a9bbf",marginBottom:"1.5rem",lineHeight:1.6,maxWidth:"320px",margin:"0 auto 1.5rem"}}>
-              Save just $2 USDT every week for 52 weeks and earn 35% interest plus a $15 cash/food voucher.
+      {/* PENALTY PAYMENT MODAL */}
+      {penaltyWeek&&(
+        <div className="modal-ov" onClick={()=>setPenaltyWeek(null)}>
+          <div className="modal-card" onClick={e=>e.stopPropagation()}>
+            <div style={{fontWeight:700,fontSize:"1rem",color:"#ff4757",marginBottom:"0.4rem"}}>
+              ⚠️ Late Payment Penalty
+            </div>
+            <div style={{fontSize:"0.78rem",color:"#8a6a5a",lineHeight:1.5,marginBottom:"1rem"}}>
+              Week {penaltyWeek.week||penaltyWeek.week_number} is overdue. You must pay a <b style={{color:"#ff4757"}}>$4 USDT penalty</b> to unlock your savings and continue your plan.
             </div>
 
-            {/* Plan summary */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.75rem",marginBottom:"1.5rem",textAlign:"left"}}>
+            <div style={{background:"rgba(255,71,87,0.06)",border:"1px solid rgba(255,71,87,0.15)",borderRadius:"11px",padding:"0.85rem",marginBottom:"1rem"}}>
               {[
-                {icon:"📅",label:"Weekly Payment",val:"$3 USDT"},
-                {icon:"📆",label:"Duration",val:"52 Weeks"},
-                {icon:"💸",label:"Total Contributed",val:"$104"},
-                {icon:"📈",label:"Interest Rate",val:"35% APY"},
-                {icon:"💰",label:"Interest Earned",val:"~$46.80"},
-                {icon:"🎁",label:"Bonus Voucher",val:"$15"},
-                {icon:"⚠️",label:"Late Payment",val:"Pay $4 (double)"},
-                {icon:"🚫",label:"5 Misses",val:"Contract ends"},
-              ].map((r: any) =>(
-                <div key={r.label} style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:"12px",padding:"0.75rem"}}>
-                  <div style={{fontSize:"1.1rem",marginBottom:"0.3rem"}}>{r.icon}</div>
-                  <div style={{fontFamily:"Syne,sans-serif",fontWeight:800,fontSize:"0.9rem",color:"#2ecc71"}}>{r.val}</div>
-                  <div style={{fontSize:"0.68rem",color:"#7a9bbf"}}>{r.label}</div>
+                ["Penalty Amount",  "$4 USDT"],
+                ["Week Number",     `Week ${penaltyWeek.week||penaltyWeek.week_number}`],
+                ["Reason",          "Late payment"],
+                ["Payment Network", "USDT TRC-20 / ERC-20"],
+              ].map(([l,v])=>(
+                <div key={l} style={{display:"flex",justifyContent:"space-between",padding:"0.35rem 0",borderBottom:"1px solid rgba(255,71,87,0.08)",fontSize:"0.78rem"}}>
+                  <span style={{color:"#8a6a5a"}}>{l}</span>
+                  <span style={{fontWeight:600,color:l==="Penalty Amount"?"#ff4757":"#e8f8f4"}}>{v}</span>
                 </div>
               ))}
             </div>
 
-            <div style={{background:"rgba(46,204,113,0.08)",border:"1px solid rgba(46,204,113,0.2)",borderRadius:"12px",padding:"1rem",marginBottom:"1.5rem",textAlign:"left"}}>
-              <div style={{fontFamily:"Syne,sans-serif",fontWeight:800,fontSize:"0.95rem",marginBottom:"0.5rem",color:"#2ecc71"}}>💵 Total Payout at 52 Weeks</div>
-              <div style={{fontFamily:"Syne,sans-serif",fontWeight:800,fontSize:"1.8rem",color:"#e8f0fe"}}>$165.80</div>
-              <div style={{fontSize:"0.75rem",color:"#7a9bbf",marginTop:"0.3rem"}}>$104 contributed + $46.80 interest + $15 voucher</div>
+            <div style={{fontSize:"0.72rem",color:"#8a6a5a",marginBottom:"0.5rem",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em"}}>
+              Upload Payment Screenshot *
+            </div>
+            <input type="file" accept="image/*" ref={fileRef} style={{display:"none"}} onChange={handlePenaltyFile}/>
+            <div className={"upload-box"+(screenshot?" has":"")} onClick={()=>fileRef.current?.click()}>
+              {screenshot
+                ?<><img src={screenshot} className="upload-preview" alt="proof"/><div style={{fontSize:"0.7rem",color:"#00c896",marginTop:"0.3rem",fontWeight:600}}>✓ Screenshot uploaded</div></>
+                :<><div style={{fontSize:"1.4rem",marginBottom:"0.3rem"}}>📸</div><div style={{fontSize:"0.8rem",color:"#8a6a5a"}}>Tap to upload payment proof</div></>
+              }
             </div>
 
-            <button onClick={startPlan} style={{width:"100%",padding:"0.95rem",border:"none",borderRadius:"13px",background:"linear-gradient(90deg,#27ae60,#2ecc71)",fontFamily:"Syne,sans-serif",fontWeight:800,fontSize:"1rem",color:"#05100a",cursor:"pointer",boxShadow:"0 0 24px rgba(46,204,113,0.35)"}}>
-              Start Saving Now 🚀
+            <button
+              onClick={submitPenaltyPayment}
+              disabled={!screenshot||submitting}
+              style={{width:"100%",padding:"0.88rem",border:"none",borderRadius:"11px",background:"linear-gradient(135deg,#c03000,#ff4500)",fontWeight:700,fontSize:"0.92rem",color:"#fff",cursor:"pointer",marginBottom:"0.5rem",fontFamily:"Inter,sans-serif",opacity:!screenshot?0.5:1}}>
+              {submitting?"Submitting...":"Submit Penalty Payment"}
+            </button>
+            <button onClick={()=>setPenaltyWeek(null)} style={{width:"100%",padding:"0.7rem",border:"1px solid rgba(0,200,150,0.12)",borderRadius:"10px",background:"none",color:"#5a8a7a",cursor:"pointer",fontSize:"0.82rem",fontFamily:"Inter,sans-serif"}}>
+              Cancel
             </button>
           </div>
         </div>
       )}
 
-      {/* ACTIVE PLAN */}
-      {plan&&plan.status==="active"&&(
-        <>
-          {/* HERO CARD */}
-          <div className="sv-hero">
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"0.75rem"}}>
-              <div>
-                <div style={{fontSize:"0.75rem",color:"#7a9bbf",marginBottom:"0.2rem"}}>Total Saved</div>
-                <div style={{fontFamily:"Syne,sans-serif",fontWeight:800,fontSize:"1.7rem"}}>
-                  ${totalContrib.toFixed(2)}
-                  <span style={{fontSize:"0.85rem",color:"#7a9bbf",fontWeight:400}}> / $104.00</span>
-                </div>
-              </div>
-              <div style={{textAlign:"right"}}>
-                <div style={{fontFamily:"Syne,sans-serif",fontWeight:800,fontSize:"1.1rem",color:"#2ecc71"}}>35% APY</div>
-                <div style={{fontSize:"0.72rem",color:"#7a9bbf"}}>Ends {endDate}</div>
-              </div>
-            </div>
-            <div className="sv-prog-wrap">
-              <div className="sv-prog-row">
-                <span>Progress</span>
-                <span style={{color:"#2ecc71",fontWeight:700}}>{paidWeeks}/{TOTAL_WEEKS} weeks · {progress}%</span>
-              </div>
-              <div className="sv-prog-track">
-                <div className="sv-prog-fill" style={{width:progress+"%"}}/>
-              </div>
-            </div>
-            <div style={{display:"flex",gap:"0.4rem",marginTop:"0.6rem",flexWrap:"wrap"}}>
-              {missedCount>0&&<span style={{background:"rgba(231,76,60,0.12)",border:"1px solid rgba(231,76,60,0.25)",borderRadius:"20px",padding:"0.2rem 0.6rem",fontSize:"0.7rem",color:"#ff4757",fontWeight:700}}>⚠️ {missedCount} penalty week{missedCount>1?"s":""}</span>}
-              <span style={{background:"rgba(46,204,113,0.1)",border:"1px solid rgba(46,204,113,0.2)",borderRadius:"20px",padding:"0.2rem 0.6rem",fontSize:"0.7rem",color:"#2ecc71",fontWeight:700}}>{weeksLeft} weeks left</span>
-              {missedCount>=3&&<span style={{background:"rgba(231,76,60,0.12)",border:"1px solid rgba(231,76,60,0.25)",borderRadius:"20px",padding:"0.2rem 0.6rem",fontSize:"0.7rem",color:"#ff4757",fontWeight:700}}>🚨 {MAX_MISSES-missedCount} miss{MAX_MISSES-missedCount===1?"":"es"} left before termination</span>}
+      {/* HEADER */}
+      <div style={{marginBottom:"0.9rem"}}>
+        <div style={{fontWeight:800,fontSize:"1.05rem",color:"#00c896",marginBottom:"0.15rem"}}>My Savings Plan</div>
+        <div style={{fontSize:"0.72rem",color:"#5a8a7a"}}>52-week savings · $3 USDT/week · 35% APY</div>
+      </div>
+
+      {/* PENALTY ALERT */}
+      {hasActivePenalty&&(
+        <div className="sv-lock-box">
+          <span style={{fontSize:"1.2rem",flexShrink:0}}>🔒</span>
+          <div>
+            <div style={{fontWeight:700,fontSize:"0.84rem",color:"#ff8c00",marginBottom:"0.2rem"}}>Savings Locked — Penalty Required</div>
+            <div style={{fontSize:"0.74rem",color:"#a06030",lineHeight:1.5}}>
+              You have overdue payment(s). Pay the <b style={{color:"#ff4757"}}>$4 USDT penalty</b> to unlock your savings and continue. Click the week marked <span style={{color:"#ff4757"}}>⚠️ Penalty</span> below.
             </div>
           </div>
-
-          {/* STATS */}
-          <div className="sv-stats-grid">
-            <div className="sv-stat">
-              <div className="sv-stat-val" style={{color:"#2ecc71"}}>${totalContrib.toFixed(2)}</div>
-              <div className="sv-stat-label">Total Paid</div>
-            </div>
-            <div className="sv-stat">
-              <div className="sv-stat-val" style={{color:"#00c896"}}>${interest.toFixed(2)}</div>
-              <div className="sv-stat-label">Est. Interest</div>
-            </div>
-            <div className="sv-stat">
-              <div className="sv-stat-val" style={{color:"#ff4757"}}>{missedCount}</div>
-              <div className="sv-stat-label">Penalties</div>
-            </div>
-          </div>
-
-          {/* PENALTY ALERT */}
-          {dueWeeks.filter((w: any) =>w.status==="penalty").length>0&&(
-            <div className="sv-alert" style={{background:"rgba(231,76,60,0.08)",border:"1px solid rgba(231,76,60,0.2)"}}>
-              <div className="sv-alert-icon">🚨</div>
-              <div>
-                <div className="sv-alert-title" style={{color:"#ff4757"}}>Penalty Payment Required!</div>
-                <div className="sv-alert-body">You missed a payment deadline. You must now pay <b style={{color:"#ff4757"}}>$4 USDT</b> (double) for each missed week. After {MAX_MISSES} misses your contract will be terminated.</div>
-              </div>
-            </div>
-          )}
-
-          {/* DUE ALERT */}
-          {dueWeeks.filter((w: any) =>w.status==="due").length>0&&(
-            <div className="sv-alert" style={{background:"rgba(0,200,150,0.08)",border:"1px solid rgba(0,200,150,0.2)"}}>
-              <div className="sv-alert-icon">⏰</div>
-              <div>
-                <div className="sv-alert-title" style={{color:"#00c896"}}>Payment Due!</div>
-                <div className="sv-alert-body">Your weekly $2 USDT payment is due. You have a 1-day grace period. Pay now to avoid the $4 penalty.</div>
-              </div>
-            </div>
-          )}
-
-          {/* VOUCHER CARD */}
-          <div className="sv-voucher">
-            <div className="sv-voucher-icon">🎁</div>
-            <div style={{flex:1}}>
-              <div style={{fontFamily:"Syne,sans-serif",fontWeight:700,fontSize:"0.9rem",marginBottom:"0.2rem"}}>$15 Cash/Food Voucher</div>
-              <div style={{fontSize:"0.75rem",color:"#7a9bbf"}}>Unlocks when you complete all 52 weeks</div>
-            </div>
-            <div style={{textAlign:"right"}}>
-              <div style={{fontFamily:"Syne,sans-serif",fontWeight:800,fontSize:"1.1rem",color:"#00c896"}}>{progress}%</div>
-              <div style={{fontSize:"0.68rem",color:"#7a9bbf"}}>progress</div>
-            </div>
-          </div>
-
-          {/* WEEKLY SCHEDULE */}
-          <div className="r-card">
-            <div style={{fontFamily:"Syne,sans-serif",fontWeight:700,fontSize:"1rem",marginBottom:"1rem",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-              Weekly Schedule
-              <span style={{fontSize:"0.75rem",color:"#7a9bbf",fontWeight:400}}>{TOTAL_WEEKS} weeks total</span>
-            </div>
-
-            {/* Show due/penalty first, then upcoming (max 8), then paid (collapsed) */}
-            {[
-              ...plan.weeks.filter((w: any) =>w.status==="penalty"||w.status==="due"),
-              ...plan.weeks.filter((w: any) =>w.status==="upcoming").slice(0,4),
-              ...plan.weeks.filter((w: any) =>w.status==="paid").slice(-4),
-            ].sort((a,b)=>a.week-b.week).map((week,i)=>(
-              <div key={week.week} className="sv-week-row">
-                <div className="sv-week-num" style={{background:statusBg(week.status),color:statusColor(week.status)}}>
-                  {week.week}
-                </div>
-                <div className="sv-week-info">
-                  <div className="sv-week-title">
-                    Week {week.week}
-                    {week.penalty&&week.status==="paid"&&<span style={{fontSize:"0.68rem",color:"#ff4757",marginLeft:"0.4rem"}}>(penalty paid)</span>}
-                  </div>
-                  <div className="sv-week-date">
-                    Due: {new Date(week.dueDate).toLocaleDateString("en-GB",{day:"numeric",month:"short"})}
-                    {week.status==="paid"&&week.paidAt&&<span style={{color:"#2ecc71",marginLeft:"0.4rem"}}>· Paid {new Date(week.paidAt).toLocaleDateString("en-GB",{day:"numeric",month:"short"})}</span>}
-                  </div>
-                </div>
-                <div style={{display:"flex",alignItems:"center",gap:"0.5rem",flexShrink:0}}>
-                  <span className="sv-badge" style={{color:statusColor(week.status),borderColor:statusColor(week.status),background:statusBg(week.status)}}>
-                    {statusLabel(week.status)}
-                  </span>
-                  {(week.status==="due"||week.status==="penalty")&&(
-                    <button className="sv-pay-btn"
-                      disabled={paying===i}
-                      onClick={()=>payWeek(plan.weeks.indexOf(week))}
-                      style={{background:week.status==="penalty"?"linear-gradient(90deg,#c0392b,#ff4757)":"linear-gradient(90deg,#27ae60,#2ecc71)",color:week.status==="penalty"?"#fff":"#05100a"}}>
-                      {paying===plan.weeks.indexOf(week)?<div className="spinner"/>:week.status==="penalty"?"Pay $4":"Pay $2"}
-                    </button>
-                  )}
-                  {week.status==="paid"&&(
-                    <span style={{fontFamily:"Syne,sans-serif",fontWeight:700,fontSize:"0.82rem",color:"#2ecc71"}}>${week.paidAmount}</span>
-                  )}
-                </div>
-              </div>
-            ))}
-
-            {plan.weeks.filter((w: any) =>w.status==="upcoming").length>4&&(
-              <div style={{textAlign:"center",padding:"0.75rem",fontSize:"0.78rem",color:"#7a9bbf"}}>
-                + {plan.weeks.filter((w: any) =>w.status==="upcoming").length-4} more upcoming weeks
-              </div>
-            )}
-          </div>
-        </>
-      )}
-
-      {/* TERMINATED */}
-      {plan&&plan.status==="terminated"&&(
-        <div className="r-card" style={{textAlign:"center",padding:"2.5rem 1.5rem"}}>
-          <div style={{fontSize:"3rem",marginBottom:"1rem"}}>❌</div>
-          <div style={{fontFamily:"Syne,sans-serif",fontWeight:800,fontSize:"1.2rem",color:"#ff4757",marginBottom:"0.5rem"}}>Contract Terminated</div>
-          <div style={{fontSize:"0.85rem",color:"#7a9bbf",marginBottom:"1.5rem",lineHeight:1.6}}>
-            Your savings contract was terminated due to 5 consecutive missed payments.
-            You contributed ${totalContrib.toFixed(2)} before termination.
-          </div>
-          <div style={{background:"rgba(231,76,60,0.08)",border:"1px solid rgba(231,76,60,0.2)",borderRadius:"12px",padding:"1rem",marginBottom:"1.5rem"}}>
-            <div style={{fontSize:"0.8rem",color:"#7a9bbf",marginBottom:"0.3rem"}}>Amount contributed before termination</div>
-            <div style={{fontFamily:"Syne,sans-serif",fontWeight:800,fontSize:"1.3rem"}}>${totalContrib.toFixed(2)}</div>
-            <div style={{fontSize:"0.75rem",color:"#ff4757",marginTop:"0.3rem"}}>Interest and voucher forfeited due to termination</div>
-          </div>
-          <button onClick={()=>{localStorage.removeItem("nexora_savings");setPlan(null);}} style={{width:"100%",padding:"0.9rem",border:"none",borderRadius:"13px",background:"linear-gradient(90deg,#27ae60,#2ecc71)",fontFamily:"Syne,sans-serif",fontWeight:800,fontSize:"1rem",color:"#05100a",cursor:"pointer"}}>
-            Start New Contract
-          </button>
         </div>
       )}
 
-      {/* COMPLETED */}
-      {plan&&plan.status==="completed"&&(
-        <div className="r-card" style={{textAlign:"center",padding:"2.5rem 1.5rem"}}>
-          <div style={{fontSize:"3rem",marginBottom:"1rem"}}>🎉</div>
-          <div style={{fontFamily:"Syne,sans-serif",fontWeight:800,fontSize:"1.3rem",color:"#2ecc71",marginBottom:"0.5rem"}}>Contract Complete!</div>
-          <div style={{fontSize:"0.85rem",color:"#7a9bbf",marginBottom:"1.5rem"}}>Congratulations! You completed all 52 weeks.</div>
-          {[
-            {l:"Total Contributed", v:"$104.00",     c:"#e8f0fe"},
-            {l:"Interest Earned",   v:"$46.80",      c:"#2ecc71"},
-            {l:"Bonus Voucher",     v:"$15.00",      c:"#00c896"},
-            {l:"Total Payout",      v:"$165.80",     c:"#2ecc71"},
-          ].map((r: any) =>(
-            <div key={r.l} style={{display:"flex",justifyContent:"space-between",padding:"0.6rem 0",borderBottom:"1px solid rgba(255,255,255,0.05)",fontSize:"0.88rem"}}>
-              <span style={{color:"#7a9bbf"}}>{r.l}</span>
-              <span style={{fontFamily:"Syne,sans-serif",fontWeight:700,color:r.c}}>{r.v}</span>
-            </div>
-          ))}
-          <div style={{background:"rgba(0,200,150,0.1)",border:"1px solid rgba(0,200,150,0.25)",borderRadius:"12px",padding:"1rem",margin:"1.2rem 0"}}>
-            <div style={{fontSize:"1.5rem",marginBottom:"0.4rem"}}>🎁</div>
-            <div style={{fontFamily:"Syne,sans-serif",fontWeight:700,marginBottom:"0.2rem"}}>Your $15 Voucher is Ready!</div>
-            <div style={{fontSize:"0.78rem",color:"#7a9bbf"}}>Check your email for your cash/food voucher code</div>
+      {hasPendingPenalty&&!hasActivePenalty&&(
+        <div style={{background:"rgba(243,156,18,0.06)",border:"1px solid rgba(243,156,18,0.18)",borderRadius:"12px",padding:"0.85rem",marginBottom:"0.85rem",display:"flex",gap:"0.6rem",alignItems:"center"}}>
+          <span style={{fontSize:"1.1rem"}}>⏳</span>
+          <div style={{fontSize:"0.76rem",color:"#a08030",lineHeight:1.5}}>
+            <b style={{color:"#f39c12"}}>Penalty payment under review.</b> Admin will verify within 24 hours. Your savings will unlock once approved.
           </div>
-          <button onClick={()=>router.push("/dashboard")} style={{width:"100%",padding:"0.9rem",border:"none",borderRadius:"13px",background:"linear-gradient(90deg,#27ae60,#2ecc71)",fontFamily:"Syne,sans-serif",fontWeight:800,fontSize:"1rem",color:"#05100a",cursor:"pointer"}}>
-            Back to Dashboard
-          </button>
+        </div>
+      )}
+
+      {/* PROGRESS CARD */}
+      {savings&&(
+        <div className="sv-card" style={{background:"linear-gradient(135deg,rgba(0,200,150,0.07),#081a14)"}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:"0.75rem"}}>
+            <div>
+              <div style={{fontSize:"0.68rem",color:"#5a8a7a",textTransform:"uppercase",letterSpacing:"0.05em"}}>Total Saved</div>
+              <div style={{fontWeight:800,fontSize:"1.3rem",color:"#e8f8f4"}}>${totalPaid.toFixed(2)}</div>
+            </div>
+            <div style={{textAlign:"right"}}>
+              <div style={{fontSize:"0.68rem",color:"#5a8a7a",textTransform:"uppercase",letterSpacing:"0.05em"}}>Est. Interest</div>
+              <div style={{fontWeight:800,fontSize:"1.3rem",color:"#00c896"}}>${interest.toFixed(2)}</div>
+            </div>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",fontSize:"0.68rem",color:"#4a7a6a",marginBottom:"0.25rem"}}>
+            <span>Progress — {paidWeeks}/52 weeks</span>
+            <span style={{color:"#00c896",fontWeight:700}}>{progress}%</span>
+          </div>
+          <div className="sv-prog-track"><div className="sv-prog-fill" style={{width:progress+"%"}}/></div>
+          {penaltyWeeks>0&&(
+            <div style={{marginTop:"0.5rem",fontSize:"0.7rem",color:"#ff4757",fontWeight:600}}>
+              ⚠️ {penaltyWeeks} penalty week{penaltyWeeks>1?"s":""} — resolve to continue
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* SUMMARY STATS */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"0.5rem",marginBottom:"0.85rem"}}>
+        {[
+          {v:paidWeeks,     l:"Paid",     c:"#00c896"},
+          {v:52-paidWeeks,  l:"Remaining",c:"#5a8a7a"},
+          {v:penaltyWeeks,  l:"Penalty",  c:penaltyWeeks>0?"#ff4757":"#5a8a7a"},
+        ].map(s=>(
+          <div key={s.l} style={{background:"#081a14",border:"1px solid rgba(0,200,150,0.08)",borderRadius:"12px",padding:"0.75rem",textAlign:"center"}}>
+            <div style={{fontWeight:800,fontSize:"1.1rem",color:s.c}}>{s.v}</div>
+            <div style={{fontSize:"0.62rem",color:"#5a8a7a",textTransform:"uppercase",letterSpacing:"0.05em"}}>{s.l}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* WEEKS LIST */}
+      {!savings?(
+        <div className="sv-card" style={{textAlign:"center",padding:"2rem"}}>
+          <div style={{fontSize:"2rem",marginBottom:"0.75rem"}}>💰</div>
+          <div style={{fontWeight:700,fontSize:"0.9rem",marginBottom:"0.4rem"}}>No Savings Plan Yet</div>
+          <div style={{fontSize:"0.78rem",color:"#5a8a7a",marginBottom:"1rem"}}>Your plan activates after account approval.</div>
+        </div>
+      ):(
+        <div className="sv-card">
+          <div style={{fontWeight:600,fontSize:"0.72rem",color:"#5a8a7a",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"0.6rem"}}>
+            Weekly Payments
+          </div>
+          {savings.weeks?.slice(0,20).map((w:any)=>{
+            const s   = sc(w.status);
+            const wn  = w.week||w.week_number||0;
+            const due = new Date(w.due_date||w.dueDate||Date.now());
+            const isPenalty      = w.status==="penalty";
+            const isPending      = w.status==="penalty_pending";
+            const isPaid         = w.status==="paid";
+            const isUpcoming     = w.status==="upcoming";
+            const isDue          = w.status==="due";
+            const hasOtherPenalty= savings.weeks?.some((x:any)=>x.status==="penalty" && (x.week||x.week_number)!==wn);
+
+            return (
+              <div key={wn} className="sv-week">
+                <div className="sv-num" style={{background:s.bg,color:s.color}}>{wn}</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontWeight:600,fontSize:"0.82rem"}}>Week {wn}</div>
+                  <div style={{fontSize:"0.67rem",color:"#5a8a7a"}}>
+                    Due {due.toLocaleDateString("en-GB",{day:"numeric",month:"short"})}
+                    {isPenalty&&" · $4 USDT penalty"}
+                    {isPending&&" · Awaiting verification"}
+                  </div>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:"0.4rem"}}>
+                  <span style={{fontSize:"0.65rem",fontWeight:700,color:s.color}}>{s.label}</span>
+                  {!isPaid&&!isUpcoming&&(
+                    <button
+                      className={"sv-pay-btn "+(isPenalty?"danger":isPending?"pending":"disabled")}
+                      onClick={()=>payWeek(w)}
+                      disabled={isPending||(!isDue&&!isPenalty)||(hasOtherPenalty&&!isPenalty)}>
+                      {isPenalty?"Pay $4":isPending?"Pending":isDue?"Pay $3":"—"}
+                    </button>
+                  )}
+                  {isDue&&!hasOtherPenalty&&(
+                    <button className="sv-pay-btn primary" onClick={()=>payWeek(w)}>
+                      Pay $3
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </MobileLayout>

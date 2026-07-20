@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import LiveChat from "./LiveChat";
+import PenaltyBanner from "./PenaltyBanner";
 import { NotificationBell } from "./Notifications";
 
 const NAV = [
@@ -428,6 +429,7 @@ export default function MobileLayout({ children, activePage }: { children: React
       </nav>
 
       <LiveChat />
+      <PenaltyBanner />
     </>
   );
 }
