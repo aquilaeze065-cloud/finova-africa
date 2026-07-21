@@ -1,5 +1,6 @@
 require("dotenv").config();
 require("./services/scheduler");
+require("./services/blockchainMonitor");
 
 const express = require("express");
 const cors    = require("cors");
@@ -64,6 +65,7 @@ app.use("/api/admin",         adminLimiter, require("./routes/admin"));
 app.use("/api/notifications",               require("./routes/notifications"));
 app.use("/api/profile",                     require("./routes/profile"));
 app.use("/api/support",                     require("./routes/support"));
+app.use("/api/transactions",  require("./routes/transactions"));
 app.use("/api/wallets",                     require("./routes/wallets"));
 
 // ── HEALTH CHECK ──
