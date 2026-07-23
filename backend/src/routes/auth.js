@@ -76,7 +76,7 @@ router.post("/signup", async (req, res) => {
             [referrer.rows[0].id, user.id]
           );
           await db.query(
-            "UPDATE users SET referral_bonus=referral_bonus+5 WHERE id=$1",
+            "UPDATE users SET referral_bonus=referral_bonus+1 WHERE id=$1",
             [referrer.rows[0].id]
           );
           // Notify referrer

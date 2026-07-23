@@ -66,6 +66,7 @@ app.use("/api/notifications",               require("./routes/notifications"));
 app.use("/api/profile",                     require("./routes/profile"));
 app.use("/api/support",                     require("./routes/support"));
 app.use("/api/transactions",  require("./routes/transactions"));
+app.use("/api/leaderboard",   require("./routes/leaderboard"));
 app.use("/api/wallets",                     require("./routes/wallets"));
 
 // ── HEALTH CHECK ──
