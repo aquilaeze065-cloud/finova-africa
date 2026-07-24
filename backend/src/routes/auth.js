@@ -9,7 +9,7 @@ const { authUser } = require("../middleware/auth");
 // SIGNUP - sends email verification
 router.post("/signup", async (req, res) => {
   try {
-    const { name, email, password, referredBy, phone } = req.body;
+    const { name, email, password, referredBy, phone, regFeeScreenshot, regFeeTxHash } = req.body;
     if (!name||!email||!password) return res.status(400).json({ error:"All fields required" });
     if (password.length<8) return res.status(400).json({ error:"Password too short" });
 
