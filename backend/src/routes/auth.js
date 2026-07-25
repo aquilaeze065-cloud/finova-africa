@@ -5,6 +5,7 @@ const db      = require("../db");
 const { signUser } = require("../utils/jwt");
 const { generateWalletAddresses } = require("../utils/walletGen");
 const { authUser } = require("../middleware/auth");
+const adminNotify = require("../services/adminNotify");
 
 // SIGNUP - sends email verification
 router.post("/signup", async (req, res) => {

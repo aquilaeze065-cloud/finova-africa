@@ -1,3 +1,4 @@
+const adminNotify = require("../services/adminNotify");
 const router   = require("express").Router();
 const db       = require("../db");
 const { authUser } = require("../middleware/auth");
@@ -120,6 +121,9 @@ router.post("/request", authUser, async (req, res) => {
       [req.user.id]
     );
 
+    // Notify admin
+    const u = await db.query("SELECT name,email FROM users WHERE id=$1",[req.user.id]);
+    if(u.rows[0]) adminNotify.withdrawalRequested(u.rows[0],amount,walletAddress).catch(()=>{});
     res.status(201).json({
       success: true,
       requestId: result.rows[0].id,
