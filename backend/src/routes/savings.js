@@ -46,4 +46,25 @@ router.post("/admin/credit/:userId", async (req, res) => {
   } catch(err) { res.status(500).json({error:"Server error"}); }
 });
 
+// Notify admin of penalty payment (from localStorage-based flow)
+router.post("/penalty/submit/local", authUser, async (req, res) => {
+  try {
+    const { weekNumber, screenshotUrl, amount } = req.body;
+    const user = await db.query("SELECT name,email FROM users WHERE id=$1",[req.user.id]);
+    if (user.rows[0]) {
+      const adminNotify = require("../services/adminNotify");
+      await adminNotify.penaltyPaymentSubmitted(user.rows[0], weekNumber, amount||4);
+    }
+    // Save to payments
+    await db.query(
+      `INSERT INTO payments(user_id,type,amount,currency,screenshot_url,status)
+       VALUES($1,'penalty',$2,'USDT',$3,'pending')`,
+      [req.user.id, amount||4, screenshotUrl||null]
+    ).catch(()=>{});
+    res.json({success:true});
+  } catch(err) {
+    res.status(500).json({error:"Server error"});
+  }
+});
+
 module.exports = router;
