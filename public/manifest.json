@@ -1,14 +1,20 @@
 {
-  "name": "Finova Africa",
-  "short_name": "Finova",
-  "description": "Premium African Crypto & Savings Platform",
+  "name": "NEXORA — Smart Finance",
+  "short_name": "NEXORA",
+  "description": "Africa's premier crypto savings platform",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0800",
-  "theme_color": "#d4af37",
+  "background_color": "#050f0c",
+  "theme_color": "#00c896",
   "orientation": "portrait",
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "categories": ["finance", "productivity"],
+  "shortcuts": [
+    { "name": "Dashboard",  "url": "/dashboard",    "description": "View your savings" },
+    { "name": "Deposit",    "url": "/deposit",       "description": "Make a deposit" },
+    { "name": "Savings",    "url": "/savings",       "description": "Track your savings" }
   ]
 }

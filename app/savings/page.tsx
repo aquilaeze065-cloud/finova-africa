@@ -2,6 +2,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import MobileLayout from "../components/MobileLayout";
+import StreakBadge from "../components/StreakBadge";
+import MilestoneConfetti from "../components/MilestoneConfetti";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const WEEKLY_AMT = 3;
@@ -18,6 +20,7 @@ export default function SavingsPage() {
   const [penaltyWeek, setPenaltyWeek]= useState<any>(null);
   const [screenshot,  setScreenshot] = useState<string|null>(null);
   const [submitting,  setSubmitting] = useState(false);
+  const [milestone,   setMilestone]  = useState(0);
 
   useEffect(()=>{
     const u = JSON.parse(localStorage.getItem("nexora_user")||localStorage.getItem("finova_user")||"{}");
@@ -75,7 +78,9 @@ export default function SavingsPage() {
     setSavings(updated);
     localStorage.setItem("nexora_savings", JSON.stringify(updated));
     localStorage.setItem("finova_savings", JSON.stringify(updated));
-    showToast(`✅ Week ${week.week||week.week_number} paid! $${WEEKLY_AMT} USDT recorded.`);
+    const weekNum = week.week||week.week_number;
+    showToast(`✅ Week ${weekNum} paid! $${WEEKLY_AMT} USDT recorded.`);
+    if([10,26,52].includes(paidWeeks+1)) setMilestone(weekNum);
   }
 
   function handlePenaltyFile(e:any) {
@@ -237,6 +242,8 @@ export default function SavingsPage() {
         <div style={{fontSize:"0.72rem",color:"#5a8a7a"}}>52-week savings · $3 USDT/week · 35% APY</div>
       </div>
 
+      <StreakBadge weeks={savings?.weeks||[]} />
+      {milestone>0&&<MilestoneConfetti week={milestone} onDone={()=>setMilestone(0)}/>}
       {/* PENALTY ALERT */}
       {hasActivePenalty&&(
         <div className="sv-lock-box">

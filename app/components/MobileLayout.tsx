@@ -2,6 +2,8 @@
 import { useState, useRef, useEffect, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import LiveChat from "./LiveChat";
+import PWAInstaller from "./PWAInstaller";
+import SessionGuard from "./SessionGuard";
 import PenaltyBanner from "./PenaltyBanner";
 import { NotificationBell } from "./Notifications";
 
@@ -15,6 +17,7 @@ const NAV = [
   { icon:"🪪", label:"Verify ID",   path:"/verify"       },
   { icon:"📊", label:"Progress",    path:"/my-progress"  },
   { icon:"⚙️", label:"Settings",   path:"/settings"     },
+  { icon:"🔐", label:"Security",   path:"/security"     },
 ];
 
 const BOTTOM_NAV = [
@@ -402,6 +405,7 @@ export default function MobileLayout({ children, activePage }: { children: React
         <footer className="ml-footer">
           <div className="ml-footer-links">
             <a href="/terms"   className="ml-footer-link">Terms</a>
+            <a href="/trust"   className="ml-footer-link">🛡️ Security</a>
             <a href="/privacy" className="ml-footer-link">Privacy</a>
             <a href="/risk"    className="ml-footer-link">Risk Disclosure</a>
           </div>
@@ -429,6 +433,8 @@ export default function MobileLayout({ children, activePage }: { children: React
       </nav>
 
       <LiveChat />
+      <PWAInstaller />
+      <SessionGuard />
       <PenaltyBanner />
     </>
   );

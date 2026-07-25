@@ -1,4 +1,5 @@
 "use client";
+import NGNRateTicker, { USDToNGN } from "../components/NGNRate";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import MobileLayout from "../components/MobileLayout";

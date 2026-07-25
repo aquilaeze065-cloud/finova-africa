@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import MobileLayout from "../components/MobileLayout";
+import NGNRateTicker, { USDToNGN } from "../components/NGNRate";
 import { getUserReferralCode } from "../utils/referral";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -147,10 +148,14 @@ export default function DashboardPage() {
         <button onClick={()=>setShowLogout(true)} style={{padding:"0.35rem 0.75rem",border:"1px solid rgba(0,200,150,0.15)",borderRadius:"8px",background:"none",color:"#5a8a7a",cursor:"pointer",fontSize:"0.72rem",fontFamily:"Inter,sans-serif"}}>Sign Out</button>
       </div>
 
+      {/* NGN RATE TICKER */}
+      <div style={{marginBottom:"0.75rem"}}><NGNRateTicker /></div>
+
       {/* BALANCE CARD */}
       <div className="db-card" style={{background:"linear-gradient(135deg,rgba(0,200,150,0.07),#081a14)"}}>
         <div style={{fontSize:"0.68rem",color:"#5a8a7a",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:"0.2rem"}}>Portfolio Balance</div>
         <div style={{fontWeight:800,fontSize:"1.5rem",color:"#e8f8f4"}}>$0.00</div>
+        <USDToNGN usdAmount={totalPaid} style={{marginTop:"0.1rem",display:"block"}}/>
         <div style={{fontSize:"0.7rem",color:"#3a6a5a",marginTop:"0.15rem"}}>Grows when you deposit</div>
         <div style={{display:"flex",gap:"1rem",marginTop:"0.85rem",paddingTop:"0.85rem",borderTop:"1px solid rgba(0,200,150,0.08)"}}>
           {[
@@ -200,7 +205,7 @@ export default function DashboardPage() {
       <div className="db-card">
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"0.25rem"}}>
           <div style={{fontWeight:600,fontSize:"0.72rem",color:"#5a8a7a",textTransform:"uppercase",letterSpacing:"0.06em"}}>My Referral Code</div>
-          <span style={{fontSize:"0.7rem",color:"#00c896",fontWeight:600}}>+$5 per referral</span>
+          <span style={{fontSize:"0.7rem",color:"#00c896",fontWeight:600}}>+$1 per referral</span>
         </div>
         {refCode ? (
           <div className="ref-box">
