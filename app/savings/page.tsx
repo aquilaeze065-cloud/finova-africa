@@ -123,6 +123,15 @@ export default function SavingsPage() {
     });
     localStorage.setItem("nexora_payments", JSON.stringify(pays));
 
+    // Notify backend/admin
+    const token = localStorage.getItem("nexora_token")||localStorage.getItem("finova_token")||"";
+    if (token) {
+      fetch(`${API}/api/savings/penalty/submit/local`,{
+        method:"POST",
+        headers:{"Content-Type":"application/json","Authorization":`Bearer ${token}`},
+        body:JSON.stringify({weekNumber:penaltyWeek.week||penaltyWeek.week_number, screenshotUrl:screenshot, amount:4}),
+      }).catch(()=>{});
+    }
     setSubmitting(false);
     setPenaltyWeek(null);
     setScreenshot(null);

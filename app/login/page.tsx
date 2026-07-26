@@ -132,6 +132,14 @@ export default function LoginPage() {
       localStorage.setItem("finova_loggedin", "true");
       if (remember) localStorage.setItem("nexora_remember",JSON.stringify({e:pendingUser.email,p:pendingUser.password}));
 
+      // Submit reg fee to backend to trigger admin notification
+      if (pendingUser.screenshot) {
+        fetch(`${API}/api/reg-fee/submit`,{
+          method:"POST",
+          headers:{"Content-Type":"application/json","Authorization":`Bearer ${data.token}`},
+          body:JSON.stringify({screenshotUrl:pendingUser.screenshot, txHash:pendingUser.txHash||null}),
+        }).catch(()=>{});
+      }
       setSignedUser(data);
       setLoading(false);
       setStep("otp");

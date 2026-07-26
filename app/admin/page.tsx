@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import AdminNotificationBell from "../components/AdminNotificationBell";
 import { useRouter } from "next/navigation";
 
 const ADMIN_PW = "nexora2024admin";
@@ -55,6 +56,13 @@ export default function AdminPage() {
   const [annType,       setAnnType]      = useState("info");
 
   useEffect(()=>{ if(authed) loadAll(); },[authed]);
+
+  // Auto-refresh every 30 seconds when authed
+  useEffect(()=>{
+    if(!authed) return;
+    const interval = setInterval(()=>{ loadAll(); }, 30000);
+    return ()=>clearInterval(interval);
+  },[authed]);
 
   function loadAll() {
     try { setPayments(JSON.parse(localStorage.getItem("nexora_payments")||"[]")); } catch {}
@@ -359,8 +367,13 @@ export default function AdminPage() {
         {/* SIDEBAR */}
         <aside className="adm-side">
           <div style={{marginBottom:"1rem",paddingBottom:"0.75rem",borderBottom:"1px solid rgba(0,200,150,0.08)"}}>
-            <div style={{fontWeight:800,fontSize:"0.9rem",color:G}}>◈ NEXORA</div>
-            <div style={{fontSize:"0.6rem",color:"#3a6a5a"}}>Admin Dashboard</div>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <div>
+                <div style={{fontWeight:800,fontSize:"0.9rem",color:G}}>◈ NEXORA</div>
+                <div style={{fontSize:"0.6rem",color:"#3a6a5a"}}>Admin Dashboard</div>
+              </div>
+              <AdminNotificationBell />
+            </div>
           </div>
           {TABS.map(t=>(
             <button key={t.id} className={`adm-nav ${tab===t.id?"on":""}`} onClick={()=>setTab(t.id as Tab)}>
@@ -427,6 +440,26 @@ export default function AdminPage() {
                     </div>
                   ))
                 }
+              </div>
+
+              {/* WHATSAPP ALERTS SETUP */}
+              <div className="adm-sec">📱 WhatsApp Alert Setup</div>
+              <div style={{background:"rgba(37,211,102,0.06)",border:"1px solid rgba(37,211,102,0.18)",borderRadius:"14px",padding:"1.1rem",marginBottom:"1rem"}}>
+                <div style={{fontWeight:700,fontSize:"0.88rem",color:"#25d366",marginBottom:"0.75rem"}}>🔔 Get WhatsApp Alerts for Every Activity</div>
+                <div style={{fontSize:"0.78rem",color:"#5a8a7a",lineHeight:1.7,marginBottom:"0.85rem"}}>
+                  To receive instant WhatsApp notifications when clients register, pay, or request withdrawals — set up <b style={{color:"#e8f8f4"}}>CallMeBot</b> (free) in Railway environment variables:
+                </div>
+                <div style={{background:"rgba(0,0,0,0.35)",borderRadius:"9px",padding:"0.75rem",marginBottom:"0.75rem",fontSize:"0.72rem",fontFamily:"monospace",color:"#00c896",lineHeight:1.8}}>
+                  <div>1. WhatsApp <b>+34 644 75 76 01</b></div>
+                  <div>2. Send: <b>I allow callmebot to send me messages</b></div>
+                  <div>3. You receive your API key</div>
+                  <div>4. Add to Railway: <b>CALLMEBOT_APIKEY=your_key</b></div>
+                  <div>5. Add: <b>ADMIN_WHATSAPP=your_number_with_country_code</b></div>
+                </div>
+                <a href="https://www.callmebot.com/blog/free-api-whatsapp-messages/" target="_blank" rel="noreferrer"
+                  style={{display:"inline-flex",alignItems:"center",gap:"0.4rem",padding:"0.5rem 1rem",background:"linear-gradient(135deg,#128c7e,#25d366)",color:"#fff",borderRadius:"9px",fontSize:"0.76rem",fontWeight:700,textDecoration:"none"}}>
+                  📱 Setup CallMeBot Free →
+                </a>
               </div>
 
               {/* REVENUE BREAKDOWN */}
