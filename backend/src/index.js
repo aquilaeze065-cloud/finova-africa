@@ -72,6 +72,19 @@ app.use("/api/reg-fee",        require("./routes/regFee"));
 app.use("/api/admin-notifications", require("./routes/adminNotifications"));
 app.use("/api/wallets",                     require("./routes/wallets"));
 
+// ── TEST TELEGRAM ──
+app.post("/api/test-telegram", async (req, res) => {
+  try {
+    const { sendTelegram } = require("./services/adminNotify");
+    const sent = await sendTelegram(
+      "🧪 <b>NEXORA Test Alert!</b>\n\nYour Telegram notifications are working correctly! 🎉\n\nYou will now receive alerts for:\n• 🆕 New registrations\n• 💳 Payment submissions\n• 💰 Weekly savings payments\n• ⚠️ Penalty payments\n• ⬇️ Withdrawal requests\n• 🎁 New referrals\n\n✅ NEXORA Admin Alerts are ACTIVE!"
+    );
+    res.json({ success: sent, message: sent ? "✅ Telegram message sent! Check your Telegram." : "❌ Failed. Check TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in Railway." });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── HEALTH CHECK ──
 app.get("/health", (req, res) => res.json({
   status:"ok", service:"NEXORA API", version:"2.0.0",
