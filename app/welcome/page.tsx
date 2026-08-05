@@ -182,7 +182,9 @@ export default function WelcomePage() {
           <span className="nav-logo-name">NEXORA</span>
         </a>
         <div className="nav-links">
-          <button className="nav-link ghost" onClick={()=>router.push("/about")}>About Us</button>
+          <button className="nav-link ghost" onClick={()=>router.push("/about")}>About</button>
+          <button className="nav-link ghost" onClick={()=>router.push("/faq")}>FAQ</button>
+          <button className="nav-link ghost" onClick={()=>router.push("/contact")}>Contact</button>
           <button className="nav-link outline" onClick={()=>router.push("/login")}>Sign In</button>
           <button className="nav-link solid" onClick={()=>router.push("/login")}>Get Started</button>
         </div>

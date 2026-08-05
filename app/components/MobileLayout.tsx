@@ -404,6 +404,9 @@ export default function MobileLayout({ children, activePage }: { children: React
         </div>
         <footer className="ml-footer">
           <div className="ml-footer-links">
+            <a href="/about"   className="ml-footer-link">About</a>
+            <a href="/faq"     className="ml-footer-link">FAQ</a>
+            <a href="/contact" className="ml-footer-link">Contact</a>
             <a href="/terms"   className="ml-footer-link">Terms</a>
             <a href="/trust"   className="ml-footer-link">🛡️ Security</a>
             <a href="/privacy" className="ml-footer-link">Privacy</a>
