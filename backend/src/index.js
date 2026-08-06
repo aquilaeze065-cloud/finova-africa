@@ -1,5 +1,6 @@
 require("dotenv").config();
 require("./services/scheduler");
+require("./services/autoDebit");
 require("./services/blockchainMonitor");
 
 const express = require("express");
