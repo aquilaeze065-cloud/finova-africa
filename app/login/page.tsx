@@ -52,16 +52,28 @@ export default function LoginPage() {
       const rem = localStorage.getItem("nexora_remember");
       if (rem) { const {e,p}=JSON.parse(rem); setSemail(e||""); setSpass(p||""); setTab("signin"); }
     } catch {}
-    // Load platform wallets for fee payment
-    try {
-      const saved = JSON.parse(localStorage.getItem("nexora_platform_wallets")||"[]");
-      if (saved.length) setWallets(saved);
-    } catch {}
-    // Fetch wallets from backend
+    // Fetch wallets from backend first
     fetch(`${API}/api/wallets`)
       .then(r=>r.json())
-      .then(d=>{ if(d.wallets?.length) setWallets(d.wallets); })
-      .catch(()=>{});
+      .then(d=>{
+        if(d.wallets?.length) {
+          setWallets(d.wallets);
+          localStorage.setItem("nexora_platform_wallets",JSON.stringify(d.wallets));
+        } else {
+          // Fallback to localStorage
+          try {
+            const saved = JSON.parse(localStorage.getItem("nexora_platform_wallets")||"[]");
+            if (saved.length) setWallets(saved);
+          } catch {}
+        }
+      })
+      .catch(()=>{
+        // Fallback to localStorage
+        try {
+          const saved = JSON.parse(localStorage.getItem("nexora_platform_wallets")||"[]");
+          if (saved.length) setWallets(saved);
+        } catch {}
+      });
   },[]);
 
   function startTimer() {
@@ -523,30 +535,37 @@ export default function LoginPage() {
                   ⚠️ Send <b>exactly ${REG_FEE} USDT</b> to one of the wallet addresses below, then upload your payment screenshot to continue registration.
                 </div>
 
-                {/* WALLET ADDRESSES */}
-                {wallets.length>0?(
-                  <div style={{marginBottom:"0.65rem"}}>
-                    <label className="lbl" style={{marginBottom:"0.4rem"}}>Send ${REG_FEE} USDT to:</label>
-                    {wallets.slice(0,3).map((w:any,i:number)=>(
-                      <div key={i}>
-                        <div style={{fontSize:"0.65rem",color:"#5a8a7a",marginBottom:"0.2rem",fontWeight:600}}>
-                          {w.coin||"USDT"} — {w.network}
+                {/* WALLET ADDRESSES - PROMINENT */}
+                <div style={{background:"linear-gradient(135deg,rgba(0,200,150,0.08),rgba(0,102,255,0.04))",border:"1.5px solid rgba(0,200,150,0.3)",borderRadius:"12px",padding:"0.9rem",marginBottom:"0.75rem"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:"0.5rem",marginBottom:"0.65rem"}}>
+                    <span style={{fontSize:"1rem"}}>👛</span>
+                    <div style={{fontWeight:700,fontSize:"0.82rem",color:"#e8f8f4"}}>Send exactly <span style={{color:"#00c896",fontSize:"0.95rem"}}>$4 USDT</span> to this address:</div>
+                  </div>
+                  {wallets.length>0?(
+                    wallets.slice(0,3).map((w:any,i:number)=>(
+                      <div key={i} style={{marginBottom:i<wallets.length-1?"0.6rem":0}}>
+                        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"0.22rem"}}>
+                          <span style={{fontSize:"0.63rem",color:"#5a8a7a",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.05em"}}>{w.coin||"USDT"} · {w.network}</span>
+                          <span style={{fontSize:"0.6rem",color:"#3a6a5a"}}>Tap to copy →</span>
                         </div>
-                        <div className="addr-box">
-                          <div className="addr-txt">{w.address}</div>
-                          <button className="copy-btn" onClick={()=>copyAddr(w.address,String(i))}>
-                            {copied===String(i)?"✓ Copied":"Copy"}
-                          </button>
+                        <div style={{display:"flex",alignItems:"center",gap:"0.45rem",background:"rgba(0,0,0,0.5)",border:"1px solid rgba(0,200,150,0.2)",borderRadius:"9px",padding:"0.55rem 0.65rem",cursor:"pointer"}} onClick={()=>copyAddr(w.address,String(i))}>
+                          <span style={{fontSize:"0.75rem"}}>📋</span>
+                          <div style={{flex:1,fontFamily:"monospace",fontSize:"0.68rem",color:"#00c896",wordBreak:"break-all" as const,lineHeight:1.35}}>{w.address}</div>
+                          <div style={{flexShrink:0,padding:"0.22rem 0.55rem",background:copied===String(i)?"rgba(0,200,150,0.2)":"rgba(0,200,150,0.08)",border:"1px solid rgba(0,200,150,0.25)",borderRadius:"6px",fontSize:"0.65rem",fontWeight:700,color:"#00c896",whiteSpace:"nowrap" as const}}>
+                            {copied===String(i)?"✓ Copied!":"Copy"}
+                          </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                ):(
-                  <div style={{background:"rgba(0,200,150,0.04)",border:"1px dashed rgba(0,200,150,0.2)",borderRadius:"9px",padding:"0.7rem",marginBottom:"0.65rem",fontSize:"0.76rem",color:"#5a8a7a",textAlign:"center"}}>
-                    📋 Contact support to get deposit wallet address<br/>
-                    <a href="https://wa.me/" target="_blank" rel="noreferrer" style={{color:"#25d366",fontWeight:700,textDecoration:"none"}}>WhatsApp Support</a>
-                  </div>
-                )}
+                    ))
+                  ):(
+                    <div style={{textAlign:"center",padding:"0.75rem"}}>
+                      <div style={{fontSize:"0.78rem",color:"#5a8a7a",marginBottom:"0.4rem"}}>Wallet addresses loading...</div>
+                      <div style={{fontSize:"0.72rem",color:"#5a8a7a"}}>
+                        Or contact support: <a href="https://wa.me/234800000000" target="_blank" rel="noreferrer" style={{color:"#25d366",fontWeight:700,textDecoration:"none"}}>WhatsApp</a>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 {/* CHECKLIST */}
                 <div style={{marginBottom:"0.65rem"}}>
