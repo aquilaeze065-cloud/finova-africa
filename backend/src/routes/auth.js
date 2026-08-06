@@ -94,6 +94,31 @@ router.post("/signup", async (req, res) => {
     }
 
     const authToken = signUser({ id:user.id, email:user.email });
+    // ── TELEGRAM ADMIN ALERT (direct, no dependency on adminNotify) ──
+    const tgToken  = process.env.TELEGRAM_BOT_TOKEN;
+    const tgChatId = process.env.TELEGRAM_CHAT_ID;
+    if (tgToken && tgChatId) {
+      const msg = `🆕 *NEW REGISTRATION!*\n\n👤 Name: ${name}\n📧 Email: ${email}\n💳 Fee: $4 USDT payment uploaded\n⏳ Status: WAITING FOR YOUR APPROVAL\n\n👉 Open admin panel to approve now!`;
+      fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: tgChatId, text: msg, parse_mode: "Markdown" }),
+      }).then(r=>r.json()).then(d=>{
+        if(d.ok) console.log("✅ Telegram alert sent for new registration:", name);
+        else console.error("❌ Telegram error:", d.description);
+      }).catch(e=>console.error("❌ Telegram fetch failed:", e.message));
+    } else {
+      console.log("⚠️ Telegram not configured - TELEGRAM_BOT_TOKEN:", !!tgToken, "TELEGRAM_CHAT_ID:", !!tgChatId);
+    }
+
+    // Also save to admin_notifications table
+    db.query(
+      `INSERT INTO admin_notifications(type,title,body,data,read,created_at) VALUES($1,$2,$3,$4,false,NOW())`,
+      ["registration", "🆕 New Registration!", 
+       `${name} (${email}) just registered and submitted $4 USDT payment. Waiting for your approval.`,
+       JSON.stringify({name, email, status:"PENDING APPROVAL", action:"Approve in Admin → Payments"})]
+    ).catch(()=>{});
+
     res.status(201).json({
       token: authToken,
       user: { ...user, addresses:addrs, email_verified:false },
