@@ -154,7 +154,7 @@ router.post("/", async (req, res) => {
     const reply = data.content?.[0]?.text || "I couldn't generate a response. Please contact our WhatsApp support.";
 
     res.json({ reply });
-  } catch (err:any) {
+  } catch (err) {
     console.error("Chat error:", err.message);
     if (err.name === "TimeoutError" || err.name === "AbortError") {
       res.status(504).json({ error: "Response timeout. Please try again." });
