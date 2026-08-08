@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import MobileLayout from "../components/MobileLayout";
+import PaymentProof from "../components/PaymentProof";
 import StreakBadge from "../components/StreakBadge";
 import MilestoneConfetti from "../components/MilestoneConfetti";
 
