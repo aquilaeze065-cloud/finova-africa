@@ -368,4 +368,18 @@ router.post("/credit-savings/:userId", async (req, res) => {
   } catch(err) { res.status(500).json({ error:err.message }); }
 });
 
+// Get single payment with full details for admin review
+router.get("/payment-detail/:id", async (req, res) => {
+  try {
+    // Try payments table first
+    let result = await db.query("SELECT p.*,u.name,u.email,u.phone FROM payments p JOIN users u ON p.user_id=u.id WHERE p.id=$1",[req.params.id]);
+    if (!result.rows[0]) {
+      // Try registration_payments
+      result = await db.query("SELECT rp.*,u.name,u.email,u.phone FROM registration_payments rp JOIN users u ON rp.user_id=u.id WHERE rp.id=$1",[req.params.id]);
+    }
+    if (!result.rows[0]) return res.status(404).json({error:"Payment not found"});
+    res.json({ payment: result.rows[0] });
+  } catch(err) { res.status(500).json({error:err.message}); }
+});
+
 module.exports = router;
