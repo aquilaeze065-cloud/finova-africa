@@ -20,7 +20,7 @@ async function checkDueWeeks() {
     // Find weeks that are due today and still pending
     const dueWeeks = await db.query(`
       SELECT sw.*, u.id as uid, u.name, u.email,
-             sp.id as plan_id, wb.usdt_balance
+             sp.id as plan_id, wb.usdt
       FROM savings_weeks sw
       JOIN savings_plans sp ON sw.plan_id=sp.id
       JOIN users u ON sw.user_id=u.id
@@ -35,13 +35,13 @@ async function checkDueWeeks() {
     console.log(`Found ${dueWeeks.rows.length} due weeks`);
 
     for (const week of dueWeeks.rows) {
-      const balance = parseFloat(week.usdt_balance||0);
+      const balance = parseFloat(week.usdt||0);
       const needed  = 3.00;
 
       if (balance >= needed) {
         // ✅ AUTO-DEBIT: User has enough balance — deduct and mark paid
         await db.query(
-          `UPDATE wallet_balances SET usdt_balance=usdt_balance-$1,updated_at=NOW()
+          `UPDATE wallet_balances SET usdt=usdt-$1,updated_at=NOW()
            WHERE user_id=$2`,
           [needed, week.uid]
         );

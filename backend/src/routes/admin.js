@@ -44,7 +44,7 @@ router.get("/users", async (req, res) => {
     const result = await db.query(`
       SELECT u.id, u.name, u.email, u.phone, u.account_status,
         u.reg_fee_paid, u.reg_fee_submitted, u.kyc_status, u.created_at,
-        COALESCE(wb.usdt_balance,0) as wallet_balance,
+        COALESCE(wb.usdt,0) as wallet_balance,
         COALESCE(sp.total_paid,0)   as total_saved,
         COALESCE((SELECT COUNT(*) FROM savings_weeks sw WHERE sw.plan_id=sp.id AND sw.status='paid'),0) as weeks_paid,
         COALESCE((SELECT COUNT(*) FROM referrals r WHERE r.referrer_id=u.id),0) as referrals
@@ -181,7 +181,7 @@ router.post("/approve-registration/:userId", async (req, res) => {
 
     // 5. Initialize wallet balance
     await db.query(
-      `INSERT INTO wallet_balances(user_id,usdt_balance,total_deposited)
+      `INSERT INTO wallet_balances(user_id,usdt,total_deposited)
        VALUES($1,0,0) ON CONFLICT(user_id) DO NOTHING`,
       [userId]
     );
@@ -252,10 +252,10 @@ router.post("/approve-payment/:paymentId", async (req, res) => {
 
     // 2. Credit user wallet balance
     await db.query(
-      `INSERT INTO wallet_balances(user_id,usdt_balance,total_deposited)
+      `INSERT INTO wallet_balances(user_id,usdt,total_deposited)
        VALUES($1,$2,$2)
        ON CONFLICT(user_id) DO UPDATE
-       SET usdt_balance=wallet_balances.usdt_balance+$2,
+       SET usdt=wallet_balances.usdt+$2,
            total_deposited=wallet_balances.total_deposited+$2,
            updated_at=NOW()`,
       [p.user_id, parseFloat(p.amount||3)]
@@ -351,8 +351,8 @@ router.post("/credit-savings/:userId", async (req, res) => {
     );
     // Credit wallet
     await db.query(
-      `INSERT INTO wallet_balances(user_id,usdt_balance,total_deposited) VALUES($1,$2,$2)
-       ON CONFLICT(user_id) DO UPDATE SET usdt_balance=wallet_balances.usdt_balance+$2,total_deposited=wallet_balances.total_deposited+$2,updated_at=NOW()`,
+      `INSERT INTO wallet_balances(user_id,usdt,total_deposited) VALUES($1,$2,$2)
+       ON CONFLICT(user_id) DO UPDATE SET usdt=wallet_balances.usdt+$2,total_deposited=wallet_balances.total_deposited+$2,updated_at=NOW()`,
       [userId, amt]
     );
     // Notify
