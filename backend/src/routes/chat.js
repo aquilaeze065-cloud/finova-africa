@@ -1,166 +1,216 @@
 const router = require("express").Router();
 
-const NEXORA_SYSTEM = `You are NORA, NEXORA's official AI support assistant. You are friendly, warm, and professional.
+const NEXORA_SYSTEM = `You are NORA, NEXORA's friendly AI support assistant. Always be warm, helpful and concise.
 
-NEXORA COMPLETE KNOWLEDGE:
-
-ABOUT NEXORA:
-- Premium crypto savings platform for African users
-- Smart Finance. Borderless Future.
-- Based in Lagos, Nigeria
+COMPLETE NEXORA KNOWLEDGE:
 
 REGISTRATION:
-- One-time $4 USDT registration fee to activate account
-- Wallet addresses shown on signup form — copy and send exactly $4 USDT
+- One-time $4 USDT registration fee required to activate account
+- Send $4 USDT to wallet address shown on signup form
 - Upload payment screenshot as proof
 - Admin approves within 24-48 hours
-- Once approved: 52-week savings plan created automatically + dashboard unlocks
+- Once approved: dashboard unlocks + 52-week savings plan starts automatically
 
 SAVINGS PLAN:
-- Pay exactly $3 USDT every week for 52 weeks
+- Pay $3 USDT every week for 52 weeks
 - Total contributions: $156 USDT
-- Interest: 35% APY = $54.60 earned
-- Completion voucher: $15 USDT bonus
+- Interest earned: 35% APY = $54.60
+- Completion bonus: $15 USDT voucher  
 - Total payout: $225.60+ USDT
-- Plan starts automatically after registration approval
 
-HOW TO PAY:
-- Go to Dashboard → Deposit
-- Copy the platform wallet address
-- Send exactly $3 USDT (TRC-20 recommended — cheapest fees)
-- Take a screenshot of the transaction
+HOW TO PAY WEEKLY:
+- Go to Dashboard then Deposit
+- Copy the platform wallet address shown
+- Send exactly $3 USDT (TRC-20 network recommended - cheapest fees)
+- Take a screenshot of the transaction confirmation
 - Upload the screenshot as payment proof
-- Admin verifies and approves — savings week marked paid immediately
+- Admin verifies and approves - your savings week updates immediately
 
-LOCAL EXCHANGERS:
-- Don't have crypto? Use local exchangers
-- They accept Naira bank transfers or mobile money
-- They convert to USDT and pay on your behalf
-- Find them: Dashboard → Deposit → Exchanger tab
+LOCAL EXCHANGERS (no crypto? no problem):
+- Use local exchangers who accept Naira bank transfers
+- Find them at Dashboard then Deposit then Exchanger tab
+- Send Naira - they convert to USDT and pay on your behalf
 
 PENALTIES:
 - Miss a payment = $4 USDT late penalty fee
-- Pay penalty the same way as regular payment (send $4, upload screenshot)
-- Admin approves penalty → your plan resumes
+- Pay penalty same way as regular payment (send $4, upload screenshot)
+- Admin approves penalty then your plan resumes
 - 5 consecutive missed payments = contract TERMINATED
-- Termination: interest forfeited, principal contributions kept
-- Set weekly phone reminders to avoid missing payments!
+- If terminated: interest forfeited but principal contributions kept
+- Set a weekly phone reminder to never miss!
 
 WITHDRAWALS:
 - ONLY allowed after completing ALL 52 weekly payments
 - Early withdrawal is NOT possible by design
-- Process after 52 weeks:
-  1. Download clearance form from your dashboard
-  2. Sign the form
-  3. Upload signed clearance form + final payment receipt
-  4. Admin reviews within 24-48 hours
-  5. Payment sent to your specified wallet address
+- After 52 weeks: download clearance form, sign it, upload with payment receipt
+- Admin processes within 24-48 hours then pays to your wallet
 
-INTEREST & RETURNS:
-- 35% APY on $156 total contributions
-- $156 × 35% = $54.60 interest
+INTEREST CALCULATION:
+- $156 total x 35% APY = $54.60 interest
 - Plus $15 completion voucher
 - Total: $225.60+ USDT payout
 
 REFERRALS:
-- Find your unique referral code on Dashboard
+- Find your referral code on Dashboard
 - Share with friends and family
-- Earn $1 USDT when referred person's account is approved
-- No limit on referrals — refer 100 people = $100 USDT bonus
-- Bonus credited automatically to your wallet
+- Earn $1 USDT when referred person account is approved
+- No limit on referrals
 
 SECURITY:
-- AES-256 encryption on all data
+- AES-256 encryption
 - Optional WhatsApp 2FA
-- KYC identity verification required
+- KYC verification required
 - Session timeout after 30 minutes
 - Login history tracking
-- Never share your password with anyone — NEXORA staff will never ask for it
+- Never share your password - NEXORA staff never ask for it
 
 KYC VERIFICATION:
-- Required for full account access and withdrawals
-- Upload: Government ID (NIN, passport, or driver's license)
-- Upload: Selfie holding your ID
-- Upload: Proof of address (utility bill or bank statement)
+- Required for full account access
+- Upload: government ID (NIN/passport/drivers license)
+- Upload: selfie holding your ID
+- Upload: proof of address (utility bill or bank statement)
 - Approved within 24-48 hours
 
 GROUP SAVINGS:
-- Save with up to 5 friends toward a shared goal
-- Create group → share invite code → friends join
+- Save with up to 5 friends toward shared goal
+- Create group, share invite code, friends join
 - Each member saves their own $3/week
-- Track everyone's progress on group dashboard
-
-STREAKS & BADGES:
-- Pay consecutively to build streak
-- Badges: Growing → Momentum → On Fire → Diamond → Legend
-- Milestone celebrations at Week 10, 26, and 52
-
-CONTACT & SUPPORT:
-- WhatsApp: Available 24/7 for urgent issues
-- Telegram: @NexoraSupport
-- Email: support@nexora.com
-- Admin: admin@nexora.com
-
-PAYMENT APPROVAL TIMES:
-- Weekdays 8AM-8PM WAT: 1-4 hours
-- Nights and weekends: up to 12 hours
-- If pending over 24 hours: contact WhatsApp support immediately
 
 RESPONSE RULES:
-- Be concise, warm, and helpful
-- Use simple language — many users are new to crypto
-- Always suggest contacting WhatsApp support for account-specific or urgent issues
-- Never ask for or share passwords
-- If issue is complex or account-specific, recommend live agent escalation
-- Keep responses under 150 words unless more detail is genuinely needed
+- Be warm, friendly and concise (under 120 words)
+- Use simple language
 - Use bullet points for steps
-- Add relevant emojis for warmth (sparingly)`;
+- For urgent account issues always recommend WhatsApp support
+- Never ask for or share passwords`;
 
-router.post("/", async (req, res) => {
+// Test endpoint to verify API key works
+router.get("/test", async function(req, res) {
+  var apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    return res.json({ status: "NO_API_KEY", message: "ANTHROPIC_API_KEY not set in Railway variables" });
+  }
+  if (apiKey.includes("placeholder")) {
+    return res.json({ status: "PLACEHOLDER_KEY", message: "Real API key not set yet" });
+  }
+  
   try {
-    const { messages } = req.body;
-    if (!messages || !Array.isArray(messages)) {
-      return res.status(400).json({ error: "Messages array required" });
-    }
-
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      return res.status(500).json({ error: "Chat service not configured. Please contact support on WhatsApp." });
-    }
-
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    var response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        "Content-Type":         "application/json",
-        "x-api-key":            apiKey,
-        "anthropic-version":    "2023-06-01",
+        "Content-Type":      "application/json",
+        "x-api-key":         apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model:      "claude-haiku-4-5-20251001",
+        max_tokens: 50,
+        messages:   [{ role: "user", content: "Say OK" }],
+      }),
+    });
+    
+    var data = await response.json();
+    if (data.content && data.content[0]) {
+      return res.json({ status: "WORKING", reply: data.content[0].text });
+    }
+    return res.json({ status: "API_ERROR", data: data });
+  } catch (err) {
+    return res.json({ status: "FETCH_ERROR", error: err.message });
+  }
+});
+
+// Main chat endpoint
+router.post("/", async function(req, res) {
+  var apiKey = process.env.ANTHROPIC_API_KEY;
+  
+  // No API key - return helpful fallback
+  if (!apiKey || apiKey.includes("placeholder")) {
+    console.log("⚠️ ANTHROPIC_API_KEY not set - using fallback response");
+    return res.json({
+      reply: "Hi! I'm NORA 👋\n\nI can help with NEXORA questions! For the best support:\n\n• 📱 WhatsApp: fastest, replies in minutes\n• 📧 Email: support@nexora.com\n• ✈️ Telegram: @NexoraSupport\n\nWhat would you like to know about NEXORA savings?"
+    });
+  }
+
+  try {
+    var messages = req.body.messages;
+    if (!messages || !Array.isArray(messages)) {
+      return res.status(400).json({ error: "Messages required" });
+    }
+
+    // Clean messages - only keep role and content
+    var cleanMessages = messages.slice(-10).map(function(m) {
+      return {
+        role:    m.role === "user" ? "user" : "assistant",
+        content: String(m.content || "").substring(0, 1000),
+      };
+    });
+
+    // Ensure alternating roles (Anthropic requirement)
+    var filtered = [];
+    var lastRole = null;
+    for (var i = 0; i < cleanMessages.length; i++) {
+      if (cleanMessages[i].role !== lastRole) {
+        filtered.push(cleanMessages[i]);
+        lastRole = cleanMessages[i].role;
+      }
+    }
+    
+    // Must start with user
+    while (filtered.length > 0 && filtered[0].role !== "user") {
+      filtered.shift();
+    }
+    
+    if (filtered.length === 0) {
+      return res.json({ reply: "How can I help you with NEXORA today?" });
+    }
+
+    console.log("📤 Sending", filtered.length, "messages to Claude...");
+
+    var response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type":      "application/json",
+        "x-api-key":         apiKey,
+        "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
         model:      "claude-haiku-4-5-20251001",
         max_tokens: 400,
         system:     NEXORA_SYSTEM,
-        messages:   messages.slice(-10), // Last 10 messages for context
+        messages:   filtered,
       }),
-      signal: AbortSignal.timeout(15000),
     });
 
+    console.log("📥 Anthropic response status:", response.status);
+
     if (!response.ok) {
-      const err = await response.json().catch(()=>({}));
-      console.error("Anthropic error:", err);
-      return res.status(500).json({ error: "AI service temporarily unavailable. Please contact WhatsApp support." });
+      var errText = await response.text();
+      console.error("❌ Anthropic error:", response.status, errText.substring(0, 200));
+      
+      // Return helpful fallback instead of error
+      return res.json({
+        reply: "I'm having a brief connection issue. Here's how to get help:\n\n• 📱 WhatsApp support (fastest)\n• 📧 support@nexora.com\n• ✈️ @NexoraSupport on Telegram\n\nOr try your question again in a moment!"
+      });
     }
 
-    const data = await response.json();
-    const reply = data.content?.[0]?.text || "I couldn't generate a response. Please contact our WhatsApp support.";
-
-    res.json({ reply });
-  } catch (err) {
-    console.error("Chat error:", err.message);
-    if (err.name === "TimeoutError" || err.name === "AbortError") {
-      res.status(504).json({ error: "Response timeout. Please try again." });
+    var data = await response.json();
+    var reply = "";
+    
+    if (data.content && data.content[0] && data.content[0].text) {
+      reply = data.content[0].text;
     } else {
-      res.status(500).json({ error: "Chat service error. Please contact WhatsApp support." });
+      console.error("Unexpected response format:", JSON.stringify(data).substring(0, 200));
+      reply = "Please contact WhatsApp support for help with your question!";
     }
+
+    console.log("✅ Chat reply sent successfully");
+    res.json({ reply: reply });
+
+  } catch (err) {
+    console.error("❌ Chat error:", err.message);
+    // Always return a helpful response, never a raw error
+    res.json({
+      reply: "I'm experiencing a brief issue right now. Please:\n\n• 📱 Contact us on WhatsApp for immediate help\n• Try asking your question again\n• Email support@nexora.com\n\nSorry for the inconvenience!"
+    });
   }
 });
 
