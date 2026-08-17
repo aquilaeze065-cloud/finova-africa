@@ -382,4 +382,109 @@ router.get("/payment-detail/:id", async (req, res) => {
   } catch(err) { res.status(500).json({error:err.message}); }
 });
 
+
+// ══════════════════════════════════
+// ADMIN - CREDIT USER WALLET
+// ══════════════════════════════════
+router.post("/credit-wallet/:userId", async (req, res) => {
+  try {
+    const { amount, note, paymentId } = req.body;
+    const userId = req.params.userId;
+    const amt = parseFloat(amount);
+
+    if (!amt || amt <= 0) return res.status(400).json({error:"Invalid amount"});
+
+    // Get current balance
+    let wallet = await db.query("SELECT * FROM wallet_balances WHERE user_id=$1",[userId]);
+    if (!wallet.rows[0]) {
+      await db.query(
+        "INSERT INTO wallet_balances(user_id,usdt_balance,total_deposited) VALUES($1,0,0)",
+        [userId]
+      );
+      wallet = await db.query("SELECT * FROM wallet_balances WHERE user_id=$1",[userId]);
+    }
+
+    const balanceBefore = parseFloat(wallet.rows[0].usdt_balance || 0);
+    const balanceAfter  = balanceBefore + amt;
+
+    // Credit the wallet
+    await db.query(
+      `UPDATE wallet_balances
+       SET usdt_balance = usdt_balance + $1,
+           total_deposited = total_deposited + $1,
+           updated_at = NOW()
+       WHERE user_id = $2`,
+      [amt, userId]
+    );
+
+    // Record wallet transaction
+    await db.query(
+      `INSERT INTO wallet_transactions(user_id,type,amount,balance_before,balance_after,description,reference_id)
+       VALUES($1,'credit',$2,$3,$4,$5,$6)`,
+      [userId, amt, balanceBefore, balanceAfter, note||"Admin credit", paymentId||null]
+    );
+
+    // Mark payment as approved if paymentId provided
+    if (paymentId) {
+      await db.query(
+        "UPDATE payments SET status='approved',reviewed_at=NOW(),reviewed_by='Admin' WHERE id=$1",
+        [paymentId]
+      );
+      await db.query(
+        "UPDATE registration_payments SET status='approved',reviewed_at=NOW() WHERE id=$1",
+        [paymentId]
+      );
+    }
+
+    // Notify user
+    const user = await db.query("SELECT name,email FROM users WHERE id=$1",[userId]);
+    await db.query(
+      `INSERT INTO notifications(user_id,type,title,body,icon,action)
+       VALUES($1,'deposit','💰 Wallet Credited!',$2,'✅','/dashboard')`,
+      [userId, `Your wallet has been credited with $${amt} USDT by admin! ${note?'Note: '+note:''} Your new balance is $${balanceAfter.toFixed(2)} USDT. You can now move funds to your savings or it will auto-debit when your weekly payment is due.`]
+    );
+
+    // Telegram alert
+    if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID) {
+      await tg(`✅ <b>Wallet Credited by Admin</b>
+
+👤 ${user.rows[0]?.name||userId}
+📧 ${user.rows[0]?.email||""}
+💰 +$${amt} USDT
+💼 New Balance: $${balanceAfter.toFixed(2)}
+📝 ${note||"Admin credit"}`);
+    }
+
+    res.json({
+      success: true,
+      message: `Wallet credited $${amt} USDT successfully!`,
+      balanceBefore,
+      balanceAfter,
+    });
+  } catch(err) {
+    console.error("Credit wallet error:", err.message);
+    res.status(500).json({error: err.message});
+  }
+});
+
+// GET user wallet balance (admin view)
+router.get("/wallet/:userId", async (req, res) => {
+  try {
+    const wallet = await db.query(
+      "SELECT * FROM wallet_balances WHERE user_id=$1",
+      [req.params.userId]
+    );
+    const txns = await db.query(
+      "SELECT * FROM wallet_transactions WHERE user_id=$1 ORDER BY created_at DESC LIMIT 20",
+      [req.params.userId]
+    );
+    res.json({
+      wallet: wallet.rows[0] || { usdt_balance: 0, total_deposited: 0 },
+      transactions: txns.rows,
+    });
+  } catch(err) {
+    res.status(500).json({error:err.message});
+  }
+});
+
 module.exports = router;
