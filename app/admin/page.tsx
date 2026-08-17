@@ -110,16 +110,31 @@ export default function AdminPage() {
     setSelItem(null); setNote("");
   }
 
-  // ── APPROVE PAYMENT ──
-  async function approvePayment(paymentId:string) {
+  // ── APPROVE PAYMENT + CREDIT WALLET ──
+  async function approvePayment(paymentId:string, userId?:string, amount?:number) {
     setLoading(true);
-    const res = await fetch(`${API}/api/admin/approve-payment/${paymentId}`,{method:"POST"});
-    const data = await res.json();
-    if (data.success) {
-      showMsg("✅ Payment approved! Wallet credited. Client notified instantly.");
+    try {
+      // 1. Credit the user wallet directly
+      if (userId && amount) {
+        const creditRes = await fetch(`${API}/api/admin/credit-wallet/${userId}`,{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({amount, paymentId, note:"Payment approved by admin"}),
+        });
+        const creditData = await creditRes.json();
+        if (!creditData.success) {
+          showMsg("❌ Credit failed: "+creditData.error);
+          setLoading(false); return;
+        }
+      }
+      // 2. Mark payment approved
+      await fetch(`${API}/api/admin/approve-payment/${paymentId}`,{method:"POST"});
+      showMsg("✅ Wallet credited $"+(amount||3)+" USDT! Client notified instantly. Auto-debit will handle savings.");
       setPending((p:any)=>({...p,payments:p.payments.filter((x:any)=>x.id!==paymentId)}));
       loadAll();
-    } else showMsg("❌ Error: "+data.error);
+    } catch(err) {
+      showMsg("❌ Error approving payment");
+    }
     setLoading(false); setSelItem(null); setNote("");
   }
 
@@ -146,6 +161,33 @@ export default function AdminPage() {
     showMsg("❌ Withdrawal rejected. Client notified.");
     setPending((p:any)=>({...p,withdrawals:p.withdrawals.filter((x:any)=>x.id!==id)}));
     setSelItem(null); setNote("");
+  }
+
+  // ── QUICK CREDIT WALLET ──
+  const [creditWalletModal, setCreditWalletModal] = useState<any>(null);
+  const [creditWalletAmt,   setCreditWalletAmt]   = useState("3");
+  const [creditWalletNote,  setCreditWalletNote]  = useState("");
+
+  async function quickCreditWallet() {
+    if (!creditWalletModal || !creditWalletAmt) return;
+    setLoading(true);
+    const res = await fetch(`${API}/api/admin/credit-wallet/${creditWalletModal.id}`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        amount: parseFloat(creditWalletAmt),
+        note: creditWalletNote || "Manual admin credit",
+      }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      showMsg(`✅ $${creditWalletAmt} USDT credited to ${creditWalletModal.name}'s wallet! Balance: $${data.balanceAfter?.toFixed(2)}`);
+      setCreditWalletModal(null); setCreditWalletAmt("3"); setCreditWalletNote("");
+      loadAll();
+    } else {
+      showMsg("❌ Error: "+data.error);
+    }
+    setLoading(false);
   }
 
   // ── CREDIT SAVINGS ──
@@ -327,6 +369,34 @@ export default function AdminPage() {
       `}</style>
 
       {toast&&<div className="toast">{toast}</div>}
+
+      {/* CREDIT WALLET MODAL */}
+      {creditWalletModal&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",backdropFilter:"blur(8px)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",padding:"1rem"}} onClick={()=>setCreditWalletModal(null)}>
+          <div style={{background:"#081a14",border:"1px solid rgba(0,200,150,0.2)",borderRadius:"18px",padding:"1.4rem",width:"100%",maxWidth:"400px"}} onClick={e=>e.stopPropagation()}>
+            <div style={{fontWeight:700,fontSize:"1rem",color:"#00c896",marginBottom:"0.3rem"}}>💼 Credit User Wallet</div>
+            <div style={{fontSize:"0.76rem",color:"#5a8a7a",marginBottom:"1rem"}}>Adding funds to: <b style={{color:"#e8f8f4"}}>{creditWalletModal.name}</b></div>
+            <div style={{marginBottom:"0.7rem"}}>
+              <label style={{fontSize:"0.63rem",color:"#5a8a7a",fontWeight:600,textTransform:"uppercase" as const,display:"block",marginBottom:"0.25rem"}}>Amount (USDT) *</label>
+              <input type="number" style={{width:"100%",background:"rgba(0,200,150,0.04)",border:"1px solid rgba(0,200,150,0.12)",borderRadius:"9px",padding:"0.62rem 0.85rem",fontSize:"0.84rem",color:"#e8f8f4",outline:"none",fontFamily:"Inter,sans-serif"}} value={creditWalletAmt} placeholder="3" onChange={e=>setCreditWalletAmt(e.target.value)}/>
+            </div>
+            <div style={{marginBottom:"0.85rem"}}>
+              <label style={{fontSize:"0.63rem",color:"#5a8a7a",fontWeight:600,textTransform:"uppercase" as const,display:"block",marginBottom:"0.25rem"}}>Note (optional)</label>
+              <input style={{width:"100%",background:"rgba(0,200,150,0.04)",border:"1px solid rgba(0,200,150,0.12)",borderRadius:"9px",padding:"0.62rem 0.85rem",fontSize:"0.84rem",color:"#e8f8f4",outline:"none",fontFamily:"Inter,sans-serif"}} value={creditWalletNote} placeholder="e.g. Week 3 payment confirmed" onChange={e=>setCreditWalletNote(e.target.value)}/>
+            </div>
+            <div style={{background:"rgba(0,200,150,0.05)",border:"1px solid rgba(0,200,150,0.1)",borderRadius:"8px",padding:"0.65rem",marginBottom:"0.85rem",fontSize:"0.74rem",color:"#5a8a7a",lineHeight:1.55}}>
+              ✅ This will add <b style={{color:"#00c896"}}>${creditWalletAmt} USDT</b> to {creditWalletModal.name}'s wallet immediately.<br/>
+              ⚡ Auto-debit will move $3 to their savings when their weekly payment is due.
+            </div>
+            <div style={{display:"flex",gap:"0.6rem"}}>
+              <button onClick={quickCreditWallet} disabled={!creditWalletAmt||loading} style={{flex:1,padding:"0.7rem",border:"none",borderRadius:"9px",background:"linear-gradient(135deg,#00a87a,#00c896)",fontWeight:700,fontSize:"0.84rem",color:"#050f0c",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                {loading?"Processing...":"✓ Credit Wallet Now"}
+              </button>
+              <button onClick={()=>setCreditWalletModal(null)} style={{padding:"0.7rem 1rem",border:"1px solid rgba(0,200,150,0.12)",borderRadius:"9px",background:"none",color:"#5a8a7a",cursor:"pointer"}}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* CREDIT MODAL */}
       {creditModal&&(
@@ -548,7 +618,7 @@ export default function AdminPage() {
                           </div>
                           <textarea placeholder="Review note (optional)..." value={note} onChange={e=>setNote(e.target.value)}/>
                           <div style={{display:"flex",gap:"0.6rem"}}>
-                            <button className="btn-approve" onClick={()=>approvePayment(p.id)} disabled={loading}>{loading?"Processing...":"✓ Approve & Credit Wallet"}</button>
+                            <button className="btn-approve" onClick={()=>approvePayment(p.id, p.user_id||p.userId, parseFloat(p.amount||3))} disabled={loading}>{loading?"Processing...":"✓ Approve & Credit Wallet"}</button>
                             <button className="btn-reject" onClick={()=>rejectPayment(p.id)}>✗ Reject</button>
                           </div>
                         </div>
@@ -625,7 +695,10 @@ export default function AdminPage() {
                       <td style={{fontWeight:700,color:G}}>{u.weeks_paid||0}/52</td>
                       <td style={{fontWeight:700,color:G}}>${parseFloat(u.total_saved||0).toFixed(0)}</td>
                       <td style={{fontWeight:700,color:"#4dffc3"}}>${parseFloat(u.wallet_balance||0).toFixed(2)}</td>
-                      <td><button onClick={e=>{e.stopPropagation();setCreditModal(u);}} style={{padding:"0.24rem 0.6rem",border:"none",borderRadius:"6px",background:`linear-gradient(135deg,${DG},${G})`,color:BG,fontSize:"0.68rem",fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>+ Credit</button></td>
+                      <td style={{display:"flex",gap:"0.3rem",flexWrap:"wrap"}}>
+                        <button onClick={e=>{e.stopPropagation();setCreditWalletModal(u);}} style={{padding:"0.24rem 0.6rem",border:"none",borderRadius:"6px",background:`linear-gradient(135deg,#0066ff,#4d9fff)`,color:"#fff",fontSize:"0.66rem",fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif",whiteSpace:"nowrap"}}>💼 Wallet</button>
+                        <button onClick={e=>{e.stopPropagation();setCreditModal(u);}} style={{padding:"0.24rem 0.6rem",border:"none",borderRadius:"6px",background:`linear-gradient(135deg,${DG},${G})`,color:BG,fontSize:"0.66rem",fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif",whiteSpace:"nowrap"}}>💰 Savings</button>
+                      </td>
                     </tr>
                   ))}</tbody>
                 </table></div>

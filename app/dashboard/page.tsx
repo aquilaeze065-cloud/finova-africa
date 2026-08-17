@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import MobileLayout from "../components/MobileLayout";
+import WalletDashboard from "../components/WalletDashboard";
 import NGNRateTicker, { USDToNGN } from "../components/NGNRate";
 import { getUserReferralCode } from "../utils/referral";
 
@@ -187,6 +188,9 @@ export default function DashboardPage() {
           <span style={{color:"#00c896",fontSize:"0.8rem"}}>→</span>
         </div>
       )}
+
+      {/* WALLET DASHBOARD */}
+      <WalletDashboard />
 
       {/* QUICK ACTIONS */}
       <div style={{marginBottom:"0.85rem"}}>
