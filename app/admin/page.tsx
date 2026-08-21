@@ -222,47 +222,89 @@ export default function AdminPage() {
     setAnnTitle(""); setAnnBody(""); setAnnType("info");
     showMsg(`✅ Announcement sent to ${stats.totalUsers} users!`);
   }
-  function saveExchanger(){
-    if(!newEx.name||!newEx.walletAddress){showMsg("Name and wallet required");return;}
-    const ex={...newEx,id:"ex_"+Date.now(),active:true,createdAt:new Date().toISOString()};
-    const u=[...exchangers,ex]; localStorage.setItem("nexora_exchangers",JSON.stringify(u)); setExchangers(u);
-    setShowAddEx(false); setNewEx({name:"",phone:"",whatsapp:"",bank:"",accountNo:"",accountName:"",network:"",walletAddress:"",country:"Nigeria"});
-    showMsg("✅ Exchanger added!");
+  async function saveExchanger(){
+    if(!newEx.name){showMsg("Name is required");return;}
+    try {
+      const res = await fetch(`${API}/api/permanent/exchangers`,{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(newEx),
+      });
+      const d = await res.json();
+      if(d.success){
+        showMsg("✅ Exchanger saved permanently to database!");
+        setShowAddEx(false);
+        setNewEx({name:"",phone:"",whatsapp:"",bank:"",accountNo:"",accountName:"",network:"",walletAddress:"",country:"Nigeria"});
+        loadAll();
+      } else showMsg("❌ "+d.error);
+    } catch { showMsg("❌ Connection error. Try again."); }
   }
-  function deleteExchanger(id:string){
-    if(!confirm("Permanently delete this exchanger?"))return;
-    const u=exchangers.filter(e=>e.id!==id); localStorage.setItem("nexora_exchangers",JSON.stringify(u)); setExchangers(u);
+  async function deleteExchanger(id:string){
+    if(!confirm("Permanently delete this exchanger from the database?"))return;
+    await fetch(`${API}/api/permanent/exchangers/${id}`,{method:"DELETE"});
+    showMsg("Exchanger deleted.");
+    loadAll();
   }
-  function saveAgent(){
+  async function saveAgent(){
     if(!newAgent.name||!newAgent.whatsapp){showMsg("Name and WhatsApp required");return;}
-    const a={...newAgent,whatsapp:newAgent.whatsapp.replace(/\D/g,""),id:"ag_"+Date.now(),active:true};
-    const u=[...supportTeam,a]; localStorage.setItem("nexora_support_team",JSON.stringify(u)); setSupportTeam(u);
-    setShowAddAgent(false); setNewAgent({name:"",whatsapp:"",role:"Support Agent"});
-    showMsg("✅ Agent added!");
+    try {
+      const res = await fetch(`${API}/api/permanent/support-team`,{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(newAgent),
+      });
+      const d = await res.json();
+      if(d.success){
+        showMsg("✅ Agent saved permanently to database!");
+        setShowAddAgent(false);
+        setNewAgent({name:"",whatsapp:"",role:"Support Agent"});
+        loadAll();
+      } else showMsg("❌ "+d.error);
+    } catch { showMsg("❌ Connection error. Try again."); }
   }
-  function toggleAgent(id:string){
-    const u=supportTeam.map(a=>a.id===id?{...a,active:!a.active}:a);
-    localStorage.setItem("nexora_support_team",JSON.stringify(u)); setSupportTeam(u);
+  async function toggleAgent(id:string){
+    const agent = supportTeam.find((a:any)=>a.id===id);
+    if(!agent) return;
+    await fetch(`${API}/api/permanent/support-team/${id}`,{
+      method:"PUT",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({active:!agent.active}),
+    });
+    loadAll();
   }
-  function deleteAgent(id:string){
-    if(!confirm("Permanently remove this support agent?"))return;
-    const u=supportTeam.filter(a=>a.id!==id); localStorage.setItem("nexora_support_team",JSON.stringify(u)); setSupportTeam(u);
+  async function deleteAgent(id:string){
+    if(!confirm("Permanently remove this support agent from the database?"))return;
+    await fetch(`${API}/api/permanent/support-team/${id}`,{method:"DELETE"});
+    showMsg("Agent permanently removed.");
+    loadAll();
   }
-  function saveWallet(){
-    if(!newWallet.address){showMsg("Wallet address required");return;}
-    const w={...newWallet,id:"wal_"+Date.now(),is_active:true};
-    const u=[...wallets,w]; localStorage.setItem("nexora_platform_wallets",JSON.stringify(u)); setWallets(u);
-    setShowAddWallet(false); setNewWallet({coin:"USDT",symbol:"USDT",network:"TRC-20 (TRON)",address:""});
-    showMsg("✅ Wallet added!");
+  async function saveWallet(){
+    if(!newWallet.address){showMsg("Wallet address is required");return;}
+    try {
+      const res = await fetch(`${API}/api/permanent/wallets`,{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(newWallet),
+      });
+      const d = await res.json();
+      if(d.success){
+        showMsg("✅ Wallet saved permanently to database! Users can now see it.");
+        setShowAddWallet(false);
+        setNewWallet({coin:"USDT",symbol:"USDT",network:"TRC-20 (TRON)",address:""});
+        loadAll();
+      } else showMsg("❌ "+d.error);
+    } catch { showMsg("❌ Connection error. Try again."); }
   }
-  function updateWallet(id:string,addr:string){
-    const u=wallets.map(w=>w.id===id?{...w,address:addr}:w);
-    localStorage.setItem("nexora_platform_wallets",JSON.stringify(u)); setWallets(u);
-    setEditWallet(null); showMsg("✅ Wallet updated!");
+  async function updateWallet(id:string,addr:string){
+    await fetch(`${API}/api/permanent/wallets/${id}`,{
+      method:"PUT",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({address:addr}),
+    });
+    setEditWallet(null);
+    showMsg("✅ Wallet address updated permanently!");
+    loadAll();
   }
-  function deleteWallet(id:string){
-    if(!confirm("Delete this wallet address?"))return;
-    const u=wallets.filter(w=>w.id!==id); localStorage.setItem("nexora_platform_wallets",JSON.stringify(u)); setWallets(u);
+  async function deleteWallet(id:string){
+    if(!confirm("Permanently delete this wallet address from the database?"))return;
+    await fetch(`${API}/api/permanent/wallets/${id}`,{method:"DELETE"});
+    showMsg("Wallet permanently deleted.");
+    loadAll();
   }
   function exportCSV(){
     if(!users.length){showMsg("No users to export yet");return;}

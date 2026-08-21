@@ -53,7 +53,7 @@ export default function LoginPage() {
       if (rem) { const {e,p}=JSON.parse(rem); setSemail(e||""); setSpass(p||""); setTab("signin"); }
     } catch {}
     // Fetch wallets from backend first
-    fetch(`${API}/api/wallets`)
+    fetch(`${API}/api/permanent/wallets`)
       .then(r=>r.json())
       .then(d=>{
         if(d.wallets?.length) {
