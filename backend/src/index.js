@@ -72,6 +72,7 @@ app.use("/api/withdrawals",    require("./routes/withdrawals"));
 app.use("/api/reg-fee",        require("./routes/regFee"));
 app.use("/api/admin-notifications", require("./routes/adminNotifications"));
 app.use("/api/chat",           require("./routes/chat"));
+app.use("/api/permanent",      require("./routes/permanent"));
 app.use("/api/wallets",                     require("./routes/wallets"));
 
 // ── TEST TELEGRAM ──
