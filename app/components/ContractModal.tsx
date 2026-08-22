@@ -167,7 +167,7 @@ export default function ContractModal({ userName, onAccept, onDecline }: any) {
             {/* INTEREST */}
             {section===1&&(<>
               <div className="ct-sec-title">💰 Interest & Payout Terms</div>
-              <div className="ct-hi">Save <b>$3 USDT/week</b> for 52 weeks and earn <b>35% APY</b> plus a <b>$15 cash/food voucher</b>.</div>
+              <div className="ct-hi">Save <b>$3 USDT/week</b> for 52 weeks and earn <b>20% APY</b> plus a <b>$15 cash/food voucher</b>.</div>
               <table className="ct-table">
                 <tbody>
                   {[
@@ -175,7 +175,7 @@ export default function ContractModal({ userName, onAccept, onDecline }: any) {
                     ["Weekly Payment",    "$3 USDT"],
                     ["Duration",          "52 Weeks (1 Year)"],
                     ["Total Contributed", "$104 USDT"],
-                    ["Interest Rate",     "35% APY"],
+                    ["Interest Rate",     "20% APY"],
                     ["Interest Earned",   "~$46.80"],
                     ["Completion Voucher","$15 Cash/Food"],
                     ["Total Payout",      "$165.80"],

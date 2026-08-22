@@ -780,7 +780,7 @@ export default function AdminPage() {
                   <thead><tr><th>User</th><th>Weeks Paid</th><th>Progress</th><th>Total Saved</th><th>Est. Payout</th><th>Penalties</th><th>Action</th></tr></thead>
                   <tbody>{savings.map((s:any)=>{
                     const pct=Math.min(100,((parseInt(s.weeks_paid)||0)/52)*100);
-                    const payout=((parseFloat(s.total_paid)||0)*1.35+15).toFixed(2);
+                    const payout=((parseFloat(s.total_paid)||0)*1.20+10).toFixed(2);
                     return (
                       <tr key={s.plan_id||s.user_id}>
                         <td><div style={{fontWeight:600}}>{s.name}</div><div style={{fontSize:"0.66rem",color:MUTED}}>{s.email}</div></td>

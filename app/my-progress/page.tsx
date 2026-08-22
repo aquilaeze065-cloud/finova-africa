@@ -147,7 +147,7 @@ export default function MyProgressPage() {
               {l:"Total to Contribute",  v:"$104.00"},
               {l:"Already Contributed",  v:`$${totalPaid.toFixed(2)}`},
               {l:"Remaining",            v:`$${(104-totalPaid).toFixed(2)}`},
-              {l:"Interest Rate",        v:"35% APY"},
+              {l:"Interest Rate",        v:"20% APY"},
               {l:"Projected Interest",   v:"~$46.80"},
               {l:"Completion Voucher",   v:"$15.00"},
               {l:"Total Payout at End",  v:"$165.80"},

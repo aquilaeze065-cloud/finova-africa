@@ -37,7 +37,7 @@ export default function RiskPage() {
 
         {[
           {h:"1. Cryptocurrency Volatility", p:"Cryptocurrency prices are highly volatile and can fluctuate significantly in short periods. The value of your holdings may increase or decrease dramatically. Past performance does not guarantee future results."},
-          {h:"2. No Guaranteed Returns", p:"While NEXORA offers a 35% APY target on savings plans, returns are subject to market conditions and platform performance. Projected returns are estimates and not guaranteed. The $15 voucher reward is subject to successful completion of all 52 weekly payments."},
+          {h:"2. No Guaranteed Returns", p:"While NEXORA offers a 20% APY target on savings plans, returns are subject to market conditions and platform performance. Projected returns are estimates and not guaranteed. The $10 bonus reward is subject to successful completion of all 52 weekly payments."},
           {h:"3. Regulatory Risk", p:"Cryptocurrency regulations vary by country and are subject to change. Changes in regulatory frameworks in your jurisdiction may affect your ability to use the platform or access your funds. NEXORA is working towards full regulatory compliance with EU MiCA and FSCA standards."},
           {h:"4. Technology Risk", p:"Like all digital platforms, NEXORA is subject to technical risks including system outages, cybersecurity threats, smart contract vulnerabilities, and internet connectivity issues. We employ industry-standard security measures to mitigate these risks."},
           {h:"5. Liquidity Risk", p:"Funds deposited in savings plans are locked for the contract period. You will not be able to access these funds before maturity. Do not deposit funds you may need for emergencies or short-term needs."},

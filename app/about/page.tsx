@@ -139,7 +139,7 @@ export default function AboutPage() {
           <div className="stat-grid">
             {[
               {v:"10,000+",l:"Active Savers"},
-              {v:"35% APY",  l:"Annual Returns"},
+              {v:"20% APY",  l:"Annual Returns"},
               {v:"$210+",    l:"52-Week Payout"},
               {v:"24/7",     l:"Support"},
             ].map(s=>(
@@ -243,7 +243,7 @@ export default function AboutPage() {
           <div className="grid-2">
             {[
               {icon:"💱",title:"Local Exchanger Network",text:"Don't have crypto? Our network of verified local exchangers accept Naira, Cedi, and mobile money transfers. They convert to USDT and credit your wallet same day."},
-              {icon:"📈",title:"35% APY Returns",text:"Earn 35% annual percentage yield on your contributions. On $156 contributed over 52 weeks, you earn $54.60 in interest — guaranteed by your savings contract."},
+              {icon:"📈",title:"20% APY Returns",text:"Earn 20% annual percentage yield on your contributions. On $106 contributed over 52 weeks, you earn $31.20 in interest — guaranteed by your savings contract."},
               {icon:"🔒",title:"Bank-Grade Security",text:"AES-256 encryption, 2FA, KYC verification, session timeouts, and real-time fraud monitoring protect your funds and identity at every layer."},
               {icon:"📱",title:"Mobile-First Design",text:"Built for your smartphone. No app download needed — works in any browser. Deposit, track savings, view history, and contact support all from your phone."},
               {icon:"👥",title:"Group Savings",text:"Save with friends toward a shared goal. Up to 5 people can pool their weekly savings into one group plan, keeping each other accountable and motivated."},
@@ -270,10 +270,10 @@ export default function AboutPage() {
             {[
               {n:"01",title:"Create Your Account",text:"Register with your email and password. Takes 2 minutes. No bank account required, no credit check, no complicated forms."},
               {n:"02",title:"Pay $4 Registration Fee",text:"A one-time $4 USDT registration fee activates your account. Send to our wallet address and upload the screenshot. Admin verifies within 24 hours."},
-              {n:"03",title:"Sign Your Savings Contract",text:"Review and sign your 52-week savings agreement. The contract defines your weekly amount ($3 USDT), interest rate (35% APY), penalties, and payout date."},
+              {n:"03",title:"Sign Your Savings Contract",text:"Review and sign your 52-week savings agreement. The contract defines your weekly amount ($3 USDT), interest rate (20% APY), penalties, and payout date."},
               {n:"04",title:"Verify Your Identity (KYC)",text:"Upload your government ID, a selfie, and proof of address. KYC unlocks full withdrawal limits and demonstrates our commitment to regulatory compliance."},
               {n:"05",title:"Pay $3 USDT Every Week",text:"Send exactly $3 USDT every week to your assigned wallet address. Use our local exchangers if you don't have crypto — just bank transfer and they convert for you."},
-              {n:"06",title:"Collect Your Full Payout",text:"After 52 weeks, submit your clearance form and final payment receipt to initiate withdrawal. Receive $156 contributed + $54.60 interest + $15 voucher = $225.60+ USDT."},
+              {n:"06",title:"Collect Your Full Payout",text:"After 52 weeks, submit your clearance form and final payment receipt to initiate withdrawal. Receive $106 contributed + $31.20 interest + $10 bonus = $197.20+ USDT."},
             ].map(s=>(
               <div key={s.n} className="step-item">
                 <div className="step-num">{s.n}</div>

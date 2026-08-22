@@ -158,11 +158,11 @@ export default function WelcomePage() {
             {l:"BTC/USD",  v:prices.btc, c:"+2.4%"},
             {l:"ETH/USD",  v:prices.eth, c:"+1.8%"},
             {l:"USDT/USD", v:prices.usdt,c:"Stable"},
-            {l:"NEXORA",   v:"35% APY",  c:"Weekly Savings"},
+            {l:"NEXORA",   v:"20% APY",  c:"Weekly Savings"},
             {l:"BTC/USD",  v:prices.btc, c:"+2.4%"},
             {l:"ETH/USD",  v:prices.eth, c:"+1.8%"},
             {l:"USDT/USD", v:prices.usdt,c:"Stable"},
-            {l:"NEXORA",   v:"35% APY",  c:"Weekly Savings"},
+            {l:"NEXORA",   v:"20% APY",  c:"Weekly Savings"},
           ].map((t,i)=>(
             <div key={i} className="ticker-item">
               {t.l} <span>{t.v}</span> <span style={{color:"#3a7a6a"}}>{t.c}</span>
@@ -199,7 +199,7 @@ export default function WelcomePage() {
             {top:"25%",left:"92%", size:"3px", delay:"1s"},
             {top:"70%",left:"5%",  size:"5px", delay:"0.5s"},
             {top:"80%",left:"88%", size:"3px", delay:"1.5s"},
-            {top:"35%",left:"95%", size:"4px", delay:"2s"},
+            {top:"20%",left:"95%", size:"4px", delay:"2s"},
             {top:"55%",left:"2%",  size:"3px", delay:"0.8s"},
           ].map((p,i)=>(
             <div key={i} className="particle" style={{top:p.top,left:p.left,width:p.size,height:p.size,animationDelay:p.delay}}/>
@@ -213,7 +213,7 @@ export default function WelcomePage() {
             Live Free.
           </h1>
           <p className="hero-sub">
-            NEXORA is Africa's premier crypto savings platform. Save just <strong style={{color:"#e8f8f4"}}>3 USDT per week</strong> and earn <strong style={{color:"#e8f8f4"}}>35% APY</strong>. No bank account needed.
+            NEXORA is Africa's premier crypto savings platform. Save just <strong style={{color:"#e8f8f4"}}>3 USDT per week</strong> and earn <strong style={{color:"#e8f8f4"}}>20% APY</strong>. No bank account needed.
           </p>
           <div className="hero-btns">
             <button className="h-btn primary" onClick={()=>router.push("/login")}>
@@ -234,7 +234,7 @@ export default function WelcomePage() {
         <div className="stats-inner">
           {[
             {v:"10,000+", l:"Active Savers"},
-            {v:"35% APY",  l:"Annual Returns"},
+            {v:"20% APY",  l:"Annual Returns"},
             {v:"$165.80",  l:"52-Week Payout"},
             {v:"24h",      l:"Support Response"},
           ].map(s=>(
@@ -256,8 +256,8 @@ export default function WelcomePage() {
             {n:"01", icon:"📝", title:"Sign Up Free",      text:"Create your account in 2 minutes. No bank account needed."},
             {n:"02", icon:"📄", title:"Sign Contract",     text:"Review your 52-week savings agreement — clear and binding."},
             {n:"03", icon:"💳", title:"Deposit 3 USDT",    text:"Use our local exchangers if you don't have crypto. Easy bank transfer."},
-            {n:"04", icon:"📈", title:"Watch It Grow",     text:"Earn 35% APY. Track progress in real-time on your dashboard."},
-            {n:"05", icon:"🎉", title:"Collect $165.80",   text:"At 52 weeks, get your full payout plus a $15 bonus voucher."},
+            {n:"04", icon:"📈", title:"Watch It Grow",     text:"Earn 20% APY. Track progress in real-time on your dashboard."},
+            {n:"05", icon:"🎉", title:"Collect $165.80",   text:"At 52 weeks, get your full payout plus a $10 bonus voucher."},
           ].map(s=>(
             <div key={s.n} className="step-card">
               <div className="step-num">{s.n}</div>
@@ -281,10 +281,10 @@ export default function WelcomePage() {
           {[
             {l:"Weekly Contribution",   v:"3 USDT"},
             {l:"Duration",             v:"52 Weeks (1 Year)"},
-            {l:"Total Contributed",    v:"$156 USDT"},
-            {l:"Interest Rate",        v:"35% APY"},
+            {l:"Total Contributed",    v:"$106 USDT"},
+            {l:"Interest Rate",        v:"20% APY"},
             {l:"Interest Earned",      v:"~$70.20 USDT"},
-            {l:"Completion Bonus",     v:"$15 Cash/Food Voucher"},
+            {l:"Completion Bonus",     v:"$10 Cash/Food Voucher"},
           ].map(r=>(
             <div key={r.l} className="calc-row">
               <span className="calc-lbl">{r.l}</span>
@@ -383,7 +383,7 @@ export default function WelcomePage() {
                 <span style={{background:"linear-gradient(135deg,#00c896,#4dffc3)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>NEXORA</span>
               </a>
               <div className="footer-desc">
-                Africa's premier crypto savings platform. Save 3 USDT/week, earn 35% APY, and build real wealth.
+                Africa's premier crypto savings platform. Save 3 USDT/week, earn 20% APY, and build real wealth.
               </div>
             </div>
             <div>

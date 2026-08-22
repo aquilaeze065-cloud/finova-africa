@@ -249,7 +249,7 @@ export default function SavingsPage() {
       {/* HEADER */}
       <div style={{marginBottom:"0.9rem"}}>
         <div style={{fontWeight:800,fontSize:"1.05rem",color:"#00c896",marginBottom:"0.15rem"}}>My Savings Plan</div>
-        <div style={{fontSize:"0.72rem",color:"#5a8a7a"}}>52-week savings · $3 USDT/week · 35% APY</div>
+        <div style={{fontSize:"0.72rem",color:"#5a8a7a"}}>52-week savings · $3 USDT/week · 20% APY</div>
       </div>
 
       <StreakBadge weeks={savings?.weeks||[]} />
